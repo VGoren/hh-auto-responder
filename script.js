@@ -15,96 +15,88 @@
 (function () {
     'use strict';
 
-    // Настройки хранилищ и ключи для local/session storage
-    const STORAGE_PREFIX = 'hh_ar_v2_';
-    const KEYS = {
-        settings: STORAGE_PREFIX + 'cfg_data',
-        isRunning: STORAGE_PREFIX + 'is_active',
-        returnUrl: STORAGE_PREFIX + 'list_url',
-        history: STORAGE_PREFIX + 'processed_ids',
-        needF5: STORAGE_PREFIX + 'reload_flag',
-        trapLock: STORAGE_PREFIX + 'ar_trap_lock',
-        instanceLock: STORAGE_PREFIX + 'instance_lock',
-        lastAttempt: STORAGE_PREFIX + 'last_attempt_id',
-        state: STORAGE_PREFIX + 'state',
-        manualList: STORAGE_PREFIX + 'manual_list'
+    const STORAGE_PREFIX = 'hh_ar_v2_';                                                                                         // Настройки хранилищ и ключи для local/session storage
+    const KEYS           = {
+        settings         : STORAGE_PREFIX + 'cfg_data',
+        isRunning        : STORAGE_PREFIX + 'is_active',
+        returnUrl        : STORAGE_PREFIX + 'list_url',
+        history          : STORAGE_PREFIX + 'processed_ids',
+        needF5           : STORAGE_PREFIX + 'reload_flag',
+        trapLock         : STORAGE_PREFIX + 'ar_trap_lock',
+        instanceLock     : STORAGE_PREFIX + 'instance_lock',
+        lastAttempt      : STORAGE_PREFIX + 'last_attempt_id',
+        state            : STORAGE_PREFIX + 'state',
+        manualList       : STORAGE_PREFIX + 'manual_list'
     };
 
-    // Важные селекторы, используемые в скрипте
-    const SELECTORS = {
-        applyBtn: '[data-qa="vacancy-serp__vacancy_response"], button[data-qa="vacancy-serp__vacancy_response"]',
-        topApply: '[data-qa="vacancy-response-link-top"], a[data-qa="vacancy-response-link-top"]',
-        modalAddCover: '[data-qa="add-cover-letter"]',
-        modalTextarea: 'textarea[data-qa="vacancy-response-popup-form-letter-input"], textarea[name="coverLetter"]',
-        modalSubmit: '[data-qa="vacancy-response-submit-popup"], button[data-qa="vacancy-response-submit-popup"]',
-        nativeWrapper: '[data-qa="textarea-native-wrapper"]',
-        relocationBtn: '[data-qa="relocation-warning-confirm"]',
-        vacancyLink: 'a[data-qa="serp-item__title"], a[data-qa="vacancy-serp__vacancy-title"]',
-        vacancyCard: 'div[data-qa="vacancy-serp__vacancy"], .vacancy-serp-item'
+    const SELECTORS      = {                                                                                                    // Важные селекторы, используемые в скрипте
+        applyBtn         : '[data-qa="vacancy-serp__vacancy_response"], button[data-qa="vacancy-serp__vacancy_response"]',
+        topApply         : '[data-qa="vacancy-response-link-top"], a[data-qa="vacancy-response-link-top"]',
+        modalAddCover    : '[data-qa="add-cover-letter"]',
+        modalTextarea    : 'textarea[data-qa="vacancy-response-popup-form-letter-input"], textarea[name="coverLetter"]',
+        modalSubmit      : '[data-qa="vacancy-response-submit-popup"], button[data-qa="vacancy-response-submit-popup"]',
+        nativeWrapper    : '[data-qa="textarea-native-wrapper"]',
+        relocationBtn    : '[data-qa="relocation-warning-confirm"]',
+        vacancyLink      : 'a[data-qa="serp-item__title"], a[data-qa="vacancy-serp__vacancy-title"]',
+        vacancyCard      : 'div[data-qa="vacancy-serp__vacancy"], .vacancy-serp-item'
     };
 
-    // Параметры по умолчанию
-    const DEFAULTS = {
-        coverText: 'Добрый день! Заинтересовала ваша вакансия. Опыт релевантен, подробности в резюме. Буду рад обратной связи!',
-        useCover: true,
-        delayMin: 2000,
-        delayMax: 5000,
-        limit: 50,
-        skipHidden: true,
-        viewMin: 8000,
-        viewMax: 25000,
-        scrollStepMs: 200,
-        actionDelayMin: 150,
-        actionDelayMax: 700,
-        waitForModalMs: 8000,
-        instanceLockTtl: 30000
+    const DEFAULTS       = {                                                                                                    // Параметры по умолчанию
+        coverText        : 'Добрый день! Заинтересовала ваша вакансия. Опыт релевантен, подробности в резюме. Буду рад обратной связи!',
+        useCover         : true,
+        delayMin         : 2000,
+        delayMax         : 5000,
+        limit            : 50,
+        skipHidden       : true,
+        viewMin          : 8000,
+        viewMax          : 25000,
+        scrollStepMs     : 200,
+        actionDelayMin   : 150,
+        actionDelayMax   : 700,
+        waitForModalMs   : 8000,
+        instanceLockTtl  : 30000
     };
 
-    // Небольшой менеджер состояния — работа с local/session storage
-    const StateManager = {
-        loadConfig: () => {
-            try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEYS.settings) || '{}') }; }
-            catch { return { ...DEFAULTS }; }
+    const StateManager   = {                                                                                                    // Небольшой менеджер состояния — работа с local/session storage
+        loadConfig       : ()       => {
+            try          { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEYS.settings) || '{}') }; }
+            catch        { return { ...DEFAULTS }; }
         },
-        saveConfig: (s) => localStorage.setItem(KEYS.settings, JSON.stringify(s)),
-        getProcessedIDs: () => {
-            try { return new Set(JSON.parse(sessionStorage.getItem(KEYS.history) || '[]')); }
-            catch { return new Set(); }
+        saveConfig       : (s)      => localStorage.setItem(KEYS.settings, JSON.stringify(s)),
+        getProcessedIDs  : ()       => {
+            try          { return new Set(JSON.parse(sessionStorage.getItem(KEYS.history) || '[]')); }
+            catch        { return new Set(); }
         },
-        addProcessedID: (id) => {
-            const s = StateManager.getProcessedIDs();
+        addProcessedID   : (id)     => {
+            const s      = StateManager.getProcessedIDs();
             s.add(id);
             sessionStorage.setItem(KEYS.history, JSON.stringify([...s]));
         },
-        clearProcessedIDs: () => sessionStorage.removeItem(KEYS.history),
-        amIRunning: () => sessionStorage.getItem(KEYS.isRunning) === '1',
-        setRunning: (state) => state ? sessionStorage.setItem(KEYS.isRunning, '1') : sessionStorage.removeItem(KEYS.isRunning),
-        setReturnUrl: (url) => sessionStorage.setItem(KEYS.returnUrl, url || location.href),
-        getReturnUrl: () => sessionStorage.getItem(KEYS.returnUrl),
-        setF5Needed: () => sessionStorage.setItem(KEYS.needF5, '1'),
-        isF5Needed: () => sessionStorage.getItem(KEYS.needF5) === '1',
-        clearF5Flag: () => sessionStorage.removeItem(KEYS.needF5),
-        // "Ловушка" — пометка, что мы уже обрабатываем возврат с тестовой страницы
-        setTrapLock: () => {
-            sessionStorage.setItem(KEYS.trapLock, '1');
-            // авто-очистка через 15 сек, если что-то пошло не так
-            setTimeout(() => {
-                if (sessionStorage.getItem(KEYS.trapLock) === '1') {
-                    sessionStorage.removeItem(KEYS.trapLock);
-                    log('Очистил ar_trap_lock по таймауту.');
-                }
-            }, 15000);
+        clearProcessedIDs: ()       =>         sessionStorage.removeItem(KEYS.history),
+        amIRunning       : ()       =>         sessionStorage.getItem   (KEYS.isRunning) === '1',
+        setRunning       : (state)  => state ? sessionStorage.setItem   (KEYS.isRunning, '1') : sessionStorage.removeItem(KEYS.isRunning),
+        setReturnUrl     : (url)    =>         sessionStorage.setItem   (KEYS.returnUrl, url || location.href),
+        getReturnUrl     : ()       =>         sessionStorage.getItem   (KEYS.returnUrl),
+        setF5Needed      : ()       =>         sessionStorage.setItem   (KEYS.needF5, '1'),
+        isF5Needed       : ()       =>         sessionStorage.getItem   (KEYS.needF5) === '1',
+        clearF5Flag      : ()       =>         sessionStorage.removeItem(KEYS.needF5),
+        setTrapLock      : ()       => {                                                                                              // "Ловушка" — пометка, что мы уже обрабатываем возврат с тестовой страницы
+                                           sessionStorage.setItem(KEYS.trapLock, '1');
+                                           setTimeout(()           => {                                                                                                  // авто-очистка через 15 сек, если что-то пошло не так
+                                               if (sessionStorage.getItem(KEYS.trapLock) === '1') {
+                                                   sessionStorage.removeItem(KEYS.trapLock);
+                                                   log('Очистил ar_trap_lock по таймауту.');
+                                               }
+                                           }, 15000);
+                                       },
+        clearTrapLock    : ()       => sessionStorage.removeItem(KEYS.trapLock),
+        hasTrapLock      : ()       => sessionStorage.getItem(KEYS.trapLock) === '1',
+        setLastAttemptID : (id)     => {                                                                                            // Запоминаем последнюю попытку отклика — пригодится при редиректах
+            if (id)      sessionStorage.setItem(KEYS.lastAttempt, id);
         },
-        clearTrapLock: () => sessionStorage.removeItem(KEYS.trapLock),
-        hasTrapLock: () => sessionStorage.getItem(KEYS.trapLock) === '1',
-        // Запоминаем последнюю попытку отклика — пригодится при редиректах
-        setLastAttemptID: (id) => {
-            if (id) sessionStorage.setItem(KEYS.lastAttempt, id);
-        },
-        getLastAttemptID: () => sessionStorage.getItem(KEYS.lastAttempt),
-        clearLastAttemptID: () => sessionStorage.removeItem(KEYS.lastAttempt),
-        // Простая кросс-вкладочная блокировка (instance lock)
-        acquireInstanceLock: (tabId) => {
+        getLastAttemptID : ()       => sessionStorage.getItem(KEYS.lastAttempt),
+        clearLastAttemptID:()       => sessionStorage.removeItem(KEYS.lastAttempt),
+        acquireInstanceLock:(tabId) => {                                                                                        // Простая кросс-вкладочная блокировка (instance lock)
             try {
                 const now = Date.now();
                 const raw = localStorage.getItem(KEYS.instanceLock);
@@ -114,78 +106,71 @@
                         return false;
                     }
                 }
-                localStorage.setItem(KEYS.instanceLock, JSON.stringify({ tabId, ts: now }));
+                localStorage.setItem(KEYS.instanceLock, JSON.stringify({ tabId : tabId, ts : now }));
                 return true;
-            } catch (e) { return true; }
+            } catch (e)  { return true; }
         },
-        releaseInstanceLock: (tabId) => {
+        releaseInstanceLock:(tabId) => {
             try {
                 const raw = localStorage.getItem(KEYS.instanceLock);
                 if (!raw) return;
                 const obj = JSON.parse(raw);
                 if (obj.tabId === tabId) localStorage.removeItem(KEYS.instanceLock);
-            } catch (e) { /* ignore */ }
+            } catch (e)  { /* ignore */ }
         },
-        // Обновляем timestamp блокировки, чтобы другие вкладки видели, что мы живы
-        touchInstanceLock: (tabId) => {
+        touchInstanceLock: (tabId)  => {                                                                                         // Обновляем timestamp блокировки, чтобы другие вкладки видели, что мы живы
             try {
                 const raw = localStorage.getItem(KEYS.instanceLock);
                 if (!raw) return;
                 const obj = JSON.parse(raw);
-                if (obj.tabId === tabId) localStorage.setItem(KEYS.instanceLock, JSON.stringify({ tabId, ts: Date.now() }));
-            } catch (e) { /* ignore */ }
+                if (obj.tabId === tabId) localStorage.setItem(KEYS.instanceLock, JSON.stringify({ tabId : tabId, ts : Date.now() }));
+            } catch (e)  { /* ignore */ }
         },
-
-        // --- manual list (vacancies that require manual answering) ---
-        getManualList: () => {
-            try { return JSON.parse(localStorage.getItem(KEYS.manualList) || '[]'); }
-            catch { return []; }
+        getManualList    : ()       => {                                                                                              // --- manual list (vacancies that require manual answering) ---
+            try          { return JSON.parse(localStorage.getItem(KEYS.manualList) || '[]'); }
+            catch        { return []; }
         },
-        addManualEntry: (entry) => {
+        addManualEntry   : (entry)  => {
             try {
-                const list = StateManager.getManualList();
+                const list   = StateManager.getManualList();
                 const exists = list.find(e => e.vid === entry.vid || e.url === entry.url);
                 if (!exists) {
                     list.unshift(entry);
-                    // ограничим длину списка, чтобы не раздувался
-                    if (list.length > 500) list.length = 500;
+                    if (list.length > 500) list.length = 500;                                                                   // ограничим длину списка, чтобы не раздувался
                     localStorage.setItem(KEYS.manualList, JSON.stringify(list));
                 }
-            } catch (e) { console.warn('addManualEntry error', e); }
+            } catch (e)  { console.warn('addManualEntry error', e); }
         },
         removeManualEntry: (vid) => {
             try {
                 const list = StateManager.getManualList().filter(e => e.vid !== vid);
                 localStorage.setItem(KEYS.manualList, JSON.stringify(list));
-            } catch (e) { console.warn('removeManualEntry error', e); }
+            } catch (e)  { console.warn('removeManualEntry error', e); }
         },
-        clearManualList: () => localStorage.removeItem(KEYS.manualList)
+        clearManualList  : () => localStorage.removeItem(KEYS.manualList)
     };
 
-    let config = StateManager.loadConfig();
-    let isLoopActive = false;
-    let stopSignal = false;
-    const TAB_ID = Math.random().toString(36).slice(2, 9);
+    let config           = StateManager.loadConfig();
+    let isLoopActive     = false;
+    let stopSignal       = false;
+    const TAB_ID         = Math.random().toString(36).slice(2, 9);
 
-    // Пытаемся поставить кросс-вкладочный lock — если не получилось, предупреждаем в консоли
-    const hasInstance = StateManager.acquireInstanceLock(TAB_ID);
-    if (!hasInstance) {
+    const hasInstance    = StateManager.acquireInstanceLock(TAB_ID);                                                            // Пытаемся поставить кросс-вкладочный lock — если не получилось, предупреждаем в консоли
+    if (!hasInstance)    {
         console.warn('[HH-AR] Похоже, в другой вкладке уже запущен процесс. Продолжаю, но возможны дубликаты.');
     }
 
-    // Утилиты
-    const wait = ms => new Promise(r => setTimeout(r, ms));
-    const randomDelay = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-    const actionPause = async () => await wait(randomDelay(config.actionDelayMin, config.actionDelayMax));
-    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const wait           = ms => new Promise(r => setTimeout(r, ms));                                                           // Утилиты
+    const randomDelay    = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const actionPause    = async () => await wait(randomDelay(config.actionDelayMin, config.actionDelayMax));
+    const clamp          = (v, a, b) => Math.max(a, Math.min(b, v));
 
-    // Лог в панели + консоль
-    const log = (msg, isError = false) => {
-        const timestamp = new Date().toLocaleTimeString();
-        const entry = document.createElement('div');
-        entry.textContent = `[${timestamp}] ${msg}`;
+    const log            = (msg, isError = false) => {                                                                          // Лог в панели + консоль
+        const timestamp  = new Date().toLocaleTimeString();
+        const entry      = document.createElement('div');
+        entry.textContent= `[${timestamp}] ${msg}`;
         if (isError) entry.style.color = '#ff4d4f';
-        const logBox = document.getElementById('ar-log-box');
+        const logBox     = document.getElementById('ar-log-box');
         if (logBox) {
             logBox.appendChild(entry);
             logBox.scrollTop = logBox.scrollHeight;
@@ -193,8 +178,7 @@
         console.log(`[HH-AR] ${msg}`);
     };
 
-    // Корректная вставка текста в textarea (учитывает React/Magritte)
-    function fillTextarea(el, value) {
+    function fillTextarea(el, value) {                                                                                          // Корректная вставка текста в textarea (учитывает React/Magritte)
         try {
             const descriptor = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value');
             if (descriptor && descriptor.set) {
@@ -202,18 +186,18 @@
             } else {
                  el.value = value;
             }
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            // Обновляем визуальный wrapper, если он есть
-            const wrapper = el.closest(SELECTORS.nativeWrapper) || el.parentElement;
-            const clone = wrapper?.querySelector('pre');
-            if (clone) clone.textContent = value || '\u200B';
-        } catch (e) { console.warn('fillTextarea error', e); }
+            el.dispatchEvent(new Event('input', { bubbles : true }));
+            const wrapper = el.closest(SELECTORS.nativeWrapper) || el.parentElement;                                            // Обновляем визуальный wrapper, если он есть
+            const clone   = wrapper?.querySelector('pre');
+            if (clone)   clone.textContent = value || '\u200B';
+        } catch (e) { 
+            console.warn('fillTextarea error', e); 
+        }
     }
 
-    // Ждём появления элемента — MutationObserver помогает при динамическом DOM
-    async function waitForElement(selector, timeout = config.waitForModalMs) {
-        const el = document.querySelector(selector);
-        if (el) return el;
+    async function waitForElement(selector, timeout = config.waitForModalMs) {                                                  // Ждём появления элемента — MutationObserver помогает при динамическом DOM
+        const el         = document.querySelector(selector);
+        if (el)          return el;
         return new Promise((resolve) => {
             const observer = new MutationObserver(() => {
                 const found = document.querySelector(selector);
@@ -222,7 +206,7 @@
                     resolve(found);
                 }
             });
-            observer.observe(document.documentElement || document, { childList: true, subtree: true });
+            observer.observe(document.documentElement || document, { childList : true, subtree : true });
             setTimeout(() => {
                 observer.disconnect();
                 resolve(null);
@@ -230,18 +214,16 @@
         });
     }
 
-    // Человеческий скролл: вниз до 60% страницы, пауза, и возврат вверх
-    async function humanScrollToCompanySectionAndReturn(viewTime) {
+    async function humanScrollToCompanySectionAndReturn(viewTime) {                                                             // Человеческий скролл: вниз до 60% страницы, пауза, и возврат вверх
         try {
             await actionPause();
 
-            const stepMs = Math.max(100, config.scrollStepMs || DEFAULTS.scrollStepMs);
-            const docHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-            const winH = window.innerHeight || document.documentElement.clientHeight;
-            const maxY = Math.max(0, docHeight - winH);
-
-            const needle = 'подходящие вакансии в этой компании';
-            let sectionEl = null;
+            const stepMs     = Math.max(100, config.scrollStepMs || DEFAULTS.scrollStepMs);
+            const docHeight  = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+            const winH       = window.innerHeight || document.documentElement.clientHeight;
+            const maxY       = Math.max(0, docHeight - winH);
+            const needle     = 'подходящие вакансии в этой компании';
+            let   sectionEl  = null;
             const candidates = Array.from(document.querySelectorAll('h1,h2,h3,h4,div,section'));
             for (const el of candidates) {
                 try {
@@ -253,25 +235,25 @@
                 } catch (e) { continue; }
             }
 
-            let targetY = null;
+            let targetY      = null;
             if (sectionEl) {
-                const rect = sectionEl.getBoundingClientRect();
-                targetY = Math.max(0, Math.round(rect.top + window.pageYOffset - 100));
+                const rect   = sectionEl.getBoundingClientRect();
+                targetY      = Math.max(0, Math.round(rect.top + window.pageYOffset - 100));
                 if (targetY > maxY) targetY = maxY;
                 log('Найдена секция "Подходящие вакансии..." — скроллю до неё.');
             } else {
-                targetY = Math.round(maxY * 0.6);
+                targetY      = Math.round(maxY * 0.6);
                 log('Секция не найдена — скроллю до 60% страницы (фоллбек).');
             }
 
             const totalSteps = Math.max(6, Math.floor((viewTime / stepMs) / 2));
-            const startY = window.pageYOffset || 0;
+            const startY     = window.pageYOffset || 0;
 
             for (let i = 1; i <= totalSteps; i++) {
                 if (stopSignal) return;
-                const frac = i / totalSteps;
-                const y = Math.round(startY + (targetY - startY) * frac);
-                window.scrollTo({ top: y, behavior: 'auto' });
+                const frac   = i / totalSteps;
+                const y      = Math.round(startY + (targetY - startY) * frac);
+                window.scrollTo({ top : y, behavior : 'auto' });
                 await wait(stepMs + randomDelay(-Math.floor(stepMs/3), Math.floor(stepMs/3)));
                 await actionPause();
             }
@@ -279,17 +261,17 @@
             await wait(randomDelay(800, 1600));
             await actionPause();
 
-            const upSteps = Math.max(4, Math.floor(totalSteps / 2));
+            const upSteps    = Math.max(4, Math.floor(totalSteps / 2));
             for (let i = upSteps; i >= 0; i--) {
                 if (stopSignal) return;
-                const frac = i / upSteps;
-                const y = Math.round(startY + (targetY - startY) * frac);
-                window.scrollTo({ top: y, behavior: 'auto' });
+                const frac   = i / upSteps;
+                const y      = Math.round(startY + (targetY - startY) * frac);
+                window.scrollTo({ top : y, behavior : 'auto' });
                 await wait(stepMs + randomDelay(-Math.floor(stepMs/4), Math.floor(stepMs/4)));
                 await actionPause();
             }
 
-            window.scrollTo({ top: 0, behavior: 'auto' });
+            window.scrollTo({ top : 0, behavior : 'auto' });
             await wait(200 + randomDelay(0, 500));
             await actionPause();
         } catch (e) {
@@ -297,22 +279,18 @@
         }
     }
 
-    // Watchdog: если попали на страницу с вопросами — пытаемся безопасно вернуться и помечаем вакансию
-    function watchTheURL() {
+    function watchTheURL() {                                                                                                    // Watchdog: если попали на страницу с вопросами — пытаемся безопасно вернуться и помечаем вакансию
         setInterval(() => {
-            // Обновляем timestamp instance lock
-            StateManager.touchInstanceLock(TAB_ID);
+            StateManager.touchInstanceLock(TAB_ID);                                                                             // Обновляем timestamp instance lock
 
             if (!StateManager.amIRunning()) return;
 
-            // Если оказались на странице вопросов/теста
-            if (location.href.includes('/applicant/vacancy_response')) {
+            if (location.href.includes('/applicant/vacancy_response')) {                                                        // Если оказались на странице вопросов/теста
                 if (!StateManager.hasTrapLock()) {
                     StateManager.setTrapLock();
                     log('Попали на вопросы/тест. Инициирую возврат (попытка history.go(-2)).', true);
 
-                    // Старательно пытаемся найти ID вакансии, чтобы пометить её как обработанную
-                    let vid = null;
+                    let vid  = null;                                                                                            // Старательно пытаемся найти ID вакансии, чтобы пометить её как обработанную
                     try {
                         if (document.referrer) {
                             vid = getVacancyIDFromHref(document.referrer);
@@ -320,22 +298,19 @@
                         }
                     } catch (e) { /* ignore */ }
 
-                    if (!vid) {
-                        const last = StateManager.getLastAttemptID();
-                        if (last) vid = last;
-                    }
-
-                    if (!vid) {
-                        const cur = getVacancyIDFromHref(location.href);
-                        if (cur) vid = 'v_' + cur;
-                    }
+                    if (!vid) { const last = StateManager.getLastAttemptID();     if (last) vid = last; }
+                    if (!vid) { const cur  = getVacancyIDFromHref(location.href); if (cur)  vid = 'v_' + cur; }
 
                     const savedBack = StateManager.getReturnUrl();
 
-                    // Сохраняем текущую страницу с вопросами для ручного отклика
-                    try {
+                    try {                                                                                                       // Сохраняем текущую страницу с вопросами для ручного отклика
                         const manualUrl = location.href;
-                        const entry = { vid: vid || ('u_' + fnv1a32(manualUrl).toString(36)), url: manualUrl, returnUrl: savedBack || '', ts: Date.now() };
+                        const entry     = {
+                            vid         : vid || ('u_' + fnv1a32(manualUrl).toString(36)),
+                            url         : manualUrl,
+                            returnUrl   : savedBack || '',
+                            ts          : Date.now()
+                        };
                         StateManager.addManualEntry(entry);
                         log(`Сохранена вакансия для ручного отклика: ${entry.vid}`);
                     } catch (e) { console.warn('save manual entry error', e); }
@@ -348,18 +323,16 @@
                         log('Не удалось определить ID вакансии на странице с вопросами.', true);
                     }
 
-                    StateManager.setF5Needed(); // после возвращения нужно обновить список
+                    StateManager.setF5Needed();                                                                                 // после возвращения нужно обновить список
                     const backUrl = StateManager.getReturnUrl();
 
-                    // Пытаемся откатиться двумя шагами назад: list <- vacancy <- applicant
-                    try {
+                    try {                                                                                                       // Пытаемся откатиться двумя шагами назад: list <- vacancy <- applicant
                         history.go(-2);
                     } catch (e) {
                         history.back();
                     }
 
-                    // Если через 1.2 сек всё ещё на странице с тестом — форсим переход по сохранённому URL
-                    setTimeout(() => {
+                    setTimeout(() => {                                                                                          // Если через 1.2 сек всё ещё на странице с тестом — форсим переход по сохранённому URL
                         if (location.href.includes('/applicant/vacancy_response')) {
                             if (backUrl) {
                                 log('Двухшаговый возврат не сработал. Перехожу по сохранённому URL.', true);
@@ -372,8 +345,7 @@
                     }, 1200);
                 }
             }
-            // Если вернулись на список вакансий — снимаем ловушку и при необходимости обновляем страницу
-            else if (document.querySelector(SELECTORS.applyBtn) || location.href.includes('/search/vacancy')) {
+            else if (document.querySelector(SELECTORS.applyBtn) || location.href.includes('/search/vacancy')) {                 // Если вернулись на список вакансий — снимаем ловушку и при необходимости обновляем страницу
                  StateManager.clearTrapLock();
 
                  if (StateManager.isF5Needed()) {
@@ -385,21 +357,19 @@
         }, 1000);
     }
 
-    // Попытки извлечь ID вакансии из URL в разных форматах
-    function getVacancyIDFromHref(href) {
-        if (!href) return null;
-        const m1 = href.match(/\/vacancy\/(\d+)/);
-        if (m1) return String(m1[1]);
-        const m2 = href.match(/[?&]vacancyId=(\d+)/);
-        if (m2) return String(m2[1]);
-        const m3 = href.match(/vacancyId%3D(\d+)/);
-        if (m3) return String(m3[1]);
+    function getVacancyIDFromHref(href) {                                                                                       // Попытки извлечь ID вакансии из URL в разных форматах
+        if (!href)       return null;
+        const m1         = href.match(/\/vacancy\/(\d+)/);
+        if (m1)          return String(m1[1]);
+        const m2         = href.match(/[?&]vacancyId=(\d+)/);
+        if (m2)          return String(m2[1]);
+        const m3         = href.match(/vacancyId%3D(\d+)/);
+        if (m3)          return String(m3[1]);
         return null;
     }
 
-    // Простой стабильный хеш (FNV-1a 32) — запасной вариант
-    function fnv1a32(str) {
-        let h = 0x811c9dc5;
+    function fnv1a32(str) {                                                                                                     // Простой стабильный хеш (FNV-1a 32) — запасной вариант
+        let h            = 0x811c9dc5;
         for (let i = 0; i < str.length; i++) {
             h ^= str.charCodeAt(i);
             h = Math.imul(h, 0x01000193);
@@ -408,42 +378,39 @@
         return h >>> 0;
     }
 
-    // Получение уникального ID вакансии для отслеживания — сначала по ссылке, затем по хешу
-    function getVacancyID(node) {
+    function getVacancyID(node) {                                                                                               // Получение уникального ID вакансии для отслеживания — сначала по ссылке, затем по хешу
         try {
-            const card = node.closest ? node.closest(SELECTORS.vacancyCard) : null;
-            const link = (card && card.querySelector) ? card.querySelector(SELECTORS.vacancyLink) : null;
-            const href = (link && link.href) || node.href || (node.getAttribute && node.getAttribute('href')) || '';
-            const id = getVacancyIDFromHref(href);
-            if (id) return 'v_' + id;
-            let text = '';
+            const card   = node.closest ? node.closest(SELECTORS.vacancyCard) : null;
+            const link   = (card && card.querySelector) ? card.querySelector(SELECTORS.vacancyLink) : null;
+            const href   = (link && link.href) || node.href || (node.getAttribute && node.getAttribute('href')) || '';
+            const id     = getVacancyIDFromHref(href);
+            if (id)      return 'v_' + id;
+            let text     = '';
             if (card && card.innerText) text = card.innerText.slice(0, 300);
             if (!text && href) text = href;
-            if (!text) text = (document.title || '') + '|' + (card ? card.dataset?.id || '' : '');
-            const h = fnv1a32(text);
+            if (!text)   text = (document.title || '') + '|' + (card ? card.dataset?.id || '' : '');
+            const h      = fnv1a32(text);
             return 'h_' + h.toString(36);
-        } catch (e) {
+        } catch (e)      {
             return 'h_' + (Date.now()).toString(36);
         }
     }
 
-    // Открываем вакансию с списка: запоминаем lastAttempt и переходим по ссылке
-    async function processVacancyOnListing(vacancyLinkEl, applyBtnOnList) {
-        const href = vacancyLinkEl?.href || vacancyLinkEl.getAttribute('href');
-        const vid = getVacancyID(vacancyLinkEl || applyBtnOnList);
+    async function processVacancyOnListing(vacancyLinkEl, applyBtnOnList) {                                                     // Открываем вакансию с списка: запоминаем lastAttempt и переходим по ссылке
+        const href       = vacancyLinkEl?.href || vacancyLinkEl.getAttribute('href');
+        const vid        = getVacancyID(vacancyLinkEl || applyBtnOnList);
 
         await actionPause();
         StateManager.setReturnUrl();
 
-        try {
-            vacancyLinkEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        } catch (e) { /* ignore */ }
+        try              { vacancyLinkEl.scrollIntoView({ block : 'center', behavior : 'smooth' }); }
+        catch (e)       { /* ignore */ }
         await actionPause();
 
         if (href) {
             log(`Открываю страницу вакансии ${vid} для чтения...`);
             await actionPause();
-            StateManager.setLastAttemptID(vid); // запомним, на какую вакансию кликаем
+            StateManager.setLastAttemptID(vid);                                                                                 // запомним, на какую вакансию кликаем
             window.location.href = href;
             return 'NAVIGATED';
         } else {
@@ -452,10 +419,9 @@
         }
     }
 
-    // Обработка вакансии: работает и на странице вакансии, и для кнопки на листинге
-    async function processVacancy(btn) {
+    async function processVacancy(btn) {                                                                                        // Обработка вакансии: работает и на странице вакансии, и для кнопки на листинге
         if (location.pathname.startsWith('/vacancy/')) {
-            const vid = getVacancyID(btn || document);
+            const vid    = getVacancyID(btn || document);
             StateManager.setReturnUrl(document.referrer || '/search/vacancy');
 
             const viewTime = randomDelay(config.viewMin, config.viewMax);
@@ -466,44 +432,38 @@
 
             let applyBtn = document.querySelector(SELECTORS.topApply) || await waitForElement(SELECTORS.applyBtn, config.waitForModalMs);
             if (!applyBtn) {
-                // Если нас уже редиректнуло на страницу с вопросами — помечаем вакансию и уходим
-                if (location.href.includes('/applicant/vacancy_response')) {
+                if (location.href.includes('/applicant/vacancy_response')) {                                            // Если нас уже редиректнуло на страницу с вопросами — помечаем вакансию и уходим
                     StateManager.addProcessedID(vid);
                     StateManager.clearLastAttemptID();
                     return 'REDIRECT';
                 }
-                // Если кнопки нет — помечаем вакансию обработанной и возвращаемся к списку
-                StateManager.addProcessedID(vid);
+                StateManager.addProcessedID(vid);                                                                       // Если кнопки нет — помечаем вакансию обработанной и возвращаемся к списку
                 StateManager.clearLastAttemptID();
                 StateManager.setF5Needed();
                 log('Кнопка "Откликнуться" не найдена — помечаю вакансию как обработанную и возвращаюсь.', true);
 
                 const backUrl = StateManager.getReturnUrl();
                 if (backUrl && backUrl.includes('/search/vacancy')) {
-                    try {
-                        window.location.href = backUrl;
-                    } catch (e) {
-                        try { history.back(); } catch (err) { /* ignore */ }
-                    }
+                    try  { window.location.href = backUrl; }
+                    catch(e){ try { history.back(); } catch (err) { /* ignore */ } }
                 } else {
-                    try { history.back(); } catch (e) { /* ignore */ }
+                    try  { history.back(); } catch (e) { /* ignore */ }
                 }
                 return 'NO_APPLY_RETURNED';
             }
 
-            // Пометим, что сейчас пытаемся откликнуться на эту вакансию
-            StateManager.setLastAttemptID(vid);
+            StateManager.setLastAttemptID(vid);                                                                                 // Пометим, что сейчас пытаемся откликнуться на эту вакансию
 
-            window.scrollTo({ top: 0, behavior: 'auto' });
+            window.scrollTo({ top : 0, behavior : 'auto' });
             await actionPause();
 
             const topBtn = document.querySelector(SELECTORS.topApply);
-            if (topBtn) {
-                topBtn.scrollIntoView({ block: 'center', behavior: 'auto' });
+            if (topBtn)  {
+                topBtn.scrollIntoView({ block : 'center', behavior : 'auto' });
                 await actionPause();
                 topBtn.click();
             } else {
-                applyBtn.scrollIntoView({ block: 'center', behavior: 'auto' });
+                applyBtn.scrollIntoView({ block : 'center', behavior : 'auto' });
                 await actionPause();
                 applyBtn.click();
             }
@@ -579,26 +539,23 @@
         return 'ERROR_UNKNOWN';
     }
 
-    // Основной цикл обработчика
-    async function startLoop() {
+    async function startLoop() {                                                                                                // Основной цикл обработчика
         if (isLoopActive) return;
 
-        // Пробуем занять instance lock заново
-        if (!StateManager.acquireInstanceLock(TAB_ID)) {
+        if (!StateManager.acquireInstanceLock(TAB_ID)) {                                                                        // Пробуем занять instance lock заново
             log('В другой вкладке уже запущен процесс (instance lock). Продолжаю, но возможны дубликаты.', true);
         }
 
-        isLoopActive = true;
-        stopSignal = false;
+        isLoopActive     = true;
+        stopSignal       = false;
         StateManager.setRunning(true);
 
-        const statusEl = document.getElementById('ar-status-text');
-        if(statusEl) statusEl.textContent = 'В работе';
+        const statusEl   = document.getElementById('ar-status-text');
+        if(statusEl)     statusEl.textContent = 'В работе';
 
-        // Если уже на странице вакансии — обрабатываем её напрямую
-        if (location.pathname.startsWith('/vacancy/')) {
+        if (location.pathname.startsWith('/vacancy/')) {                                                                        // Если уже на странице вакансии — обрабатываем её напрямую
             log('На странице вакансии — продолжаю обработку тут.');
-            const res = await processVacancy();
+            const res    = await processVacancy();
             if (res === 'OK') {
                 log('Отклик отправлен. Завершаю цикл для корректного возврата.');
                 isLoopActive = false;
@@ -616,16 +573,16 @@
             }
         }
 
-        const allBtns = Array.from(document.querySelectorAll(SELECTORS.applyBtn));
-        const processed = StateManager.getProcessedIDs();
+        const allBtns    = Array.from(document.querySelectorAll(SELECTORS.applyBtn));
+        const processed  = StateManager.getProcessedIDs();
 
-        const targets = allBtns.filter(b => {
+        const targets    = allBtns.filter(b => {
             if (config.skipHidden && b.offsetParent === null) return false;
             return !processed.has(getVacancyID(b));
         });
 
         log(`Найдено вакансий: ${allBtns.length}. Новых к обработке: ${targets.length}.`);
-        let count = 0;
+        let count        = 0;
 
         for (const btn of targets) {
             if (stopSignal || count >= config.limit) break;
@@ -643,8 +600,7 @@
                 log(`Отклик #${count} отправлен.`);
                 await actionPause();
             } else if (result === 'NAVIGATED') {
-                // Перешли на страницу вакансии — завершаем цикл, оставляя флаг running для авто-старта на новой странице
-                log('Переход на страницу вакансии — завершаю цикл для корректной навигации.');
+                log('Переход на страницу вакансии — завершаю цикл для корректной навигации.');                                  // Перешли на страницу вакансии — завершаем цикл, оставляя флаг running для авто-старта на новой странице
                 isLoopActive = false;
                 return;
             } else if (result === 'REDIRECT') {
@@ -665,139 +621,168 @@
         }
     }
 
-    // UI — панель с настройками и логом
-    function setupUI() {
+    function setupUI() {                                                                                                        // UI — панель с настройками и логом
         if (document.getElementById('ar-main-panel')) return;
 
-        const toggleBtn = document.createElement('div');
-        toggleBtn.id = 'ar-toggle-btn';
-        toggleBtn.textContent = '🤖';
-        toggleBtn.style.cssText = `
-            position: fixed; top: 50%; right: 20px; transform: translateY(-50%);
-            width: 48px; height: 48px;
-            background: #222; color: #fff; border-radius: 50%; display: none;
-            align-items: center; justify-content: center; font-size: 24px; cursor: pointer;
-            z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 2px solid #fff;
-            user-select: none; transition: all 0.2s;
-        `;
+        const styles = {
+            toggleBtn   : `
+                          position       : fixed; 
+                          top            : 50%; 
+                          right          : 20px; 
+                          transform      : translateY(-50%);
+                          width          : 48px; 
+                          height         : 48px;
+                          background     : #222; 
+                          color          : #fff; 
+                          border-radius  : 50%; 
+                          display        : none;
+                          align-items    : center; 
+                          justify-content: center; 
+                          font-size      : 24px; 
+                          cursor         : pointer;
+                          z-index        : 99999; 
+                          box-shadow     : 0 4px 12px rgba(0,0,0,0.3); 
+                          border         : 2px solid #fff;
+                          user-select    : none; 
+                          transition     : all 0.2s;
+                          `,
+            panel       : `
+                          position       : fixed;
+                          bottom         : 20px;
+                          right          : 20px;
+                          width          : 600px;
+                          background     : #fff;
+                          border         : 1px solid #e0e0e0;
+                          box-shadow     : 0 4px 20px rgba(0,0,0,0.2);
+                          border-radius  : 12px;
+                          z-index        : 99999;
+                          font-family    : sans-serif;
+                          font-size      : 13px;
+                          color          : #333;
+                          overflow       : hidden;
+                          display        : block;
+                          `,
+            header      : "padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f9f9f9;",
+            status      : "font-weight: bold; color: #666; font-size: 11px;",
+            btnMinimize : "background:none; border:none; cursor:pointer; font-size: 16px; color:#888;",
+            container   : "padding: 12px;",
+            label       : "display:block; margin-bottom: 8px; cursor: pointer;",
+            textarea    : "width: 100%; box-sizing: border-box; border: 1px solid #ddd; padding: 8px; border-radius: 6px; resize: vertical; margin-bottom: 12px; font-family: inherit;",
+            row         : "display: flex; gap: 10px; margin-bottom: 12px;",
+            labelSmall  : "font-size: 10px; color: #888; margin-bottom: 2px;",
+            input       : "width: 100%; padding: 4px; border:1px solid #ddd; border-radius: 4px;",
+            btnStart    : "flex: 1; padding: 8px; background: #22c55e; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;",
+            btnStop     : "flex: 1; padding: 8px; background: #ef4444; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;",
+            btnSecondary: "flex:1; padding:6px; border-radius:6px; border:1px solid #ddd; cursor:pointer;",
+            footer      : "padding: 12px; border-top: 1px solid #eee;",
+            manualList  : "max-height:120px; overflow:auto; font-size:12px; border:1px solid #f0f0f0; padding:6px; border-radius:6px; background:#fafafa",
+            logBox      : "height: 140px; overflow-y: auto; background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 11px; padding: 8px; border-top: 1px solid #333;"
+        };
+
+        const toggleBtn  = document.createElement('div');
+        toggleBtn.id            = 'ar-toggle-btn';
+        toggleBtn.textContent   = '🤖';
+        toggleBtn.style.cssText = styles.toggleBtn;
         document.body.appendChild(toggleBtn);
 
-        const panel = document.createElement('div');
-        panel.id = 'ar-main-panel';
-        panel.style.position = 'fixed';
-        panel.style.bottom = '20px';
-        panel.style.right = '20px';
-        panel.style.width = '420px';
-        panel.style.background = '#fff';
-        panel.style.border = '1px solid #e0e0e0';
-        panel.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)';
-        panel.style.borderRadius = '12px';
-        panel.style.zIndex = '99999';
-        panel.style.fontFamily = 'sans-serif';
-        panel.style.fontSize = '13px';
-        panel.style.color = '#333';
-        panel.style.overflow = 'hidden';
-        panel.style.display = 'block';
-
+        const panel              = document.createElement('div');
+        panel.id                 = 'ar-main-panel';
+        panel.style.cssText      = styles.panel;
         panel.innerHTML = `
-            <div style="padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f9f9f9;">
+            <div style="${styles.header}">
                 <b>🤖 HH AutoResponder</b>
                 <div style="display:flex; gap: 8px; align-items: center;">
-                    <span id="ar-status-text" style="font-weight: bold; color: #666; font-size: 11px;">Ожидание</span>
-                    <button id="ar-minimize-btn" style="background:none; border:none; cursor:pointer; font-size: 16px; color:#888;">—</button>
+                    <span   id="ar-status-text"  style="${styles.status}">Ожидание</span>
+                    <button id="ar-minimize-btn" style="${styles.btnMinimize}">—</button>
                 </div>
             </div>
-            <div style="padding: 12px;">
-                <label style="display:block; margin-bottom: 8px; cursor: pointer;">
+            <div style="${styles.container}">
+                <label style="${styles.label}">
                     <input type="checkbox" id="ar-use-cover-check"> Сопроводительное письмо
                 </label>
-                <textarea id="ar-cover-text" rows="4" style="width: 100%; box-sizing: border-box; border: 1px solid #ddd; padding: 8px; border-radius: 6px; resize: vertical; margin-bottom: 12px; font-family: inherit;"></textarea>
-
-                <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                <textarea id="ar-cover-text" rows="4" style="${styles.textarea}"></textarea>
+        
+                <div style="${styles.row}">
                     <div style="flex: 1;">
-                        <div style="font-size: 10px; color: #888; margin-bottom: 2px;">Задержка между действиями (мс)</div>
+                        <div style="${styles.labelSmall}">Задержка между действиями (мс)</div>
                         <div style="display:flex; align-items:center; gap: 4px;">
-                            <input type="number" id="ar-min-delay" style="width: 100%; padding: 4px; border:1px solid #ddd; border-radius: 4px;" placeholder="Min">
+                            <input type="number" id="ar-min-delay" style="${styles.input}" placeholder="Min">
                             <span style="color:#888">-</span>
-                            <input type="number" id="ar-max-delay" style="width: 100%; padding: 4px; border:1px solid #ddd; border-radius: 4px;" placeholder="Max">
+                            <input type="number" id="ar-max-delay" style="${styles.input}" placeholder="Max">
                         </div>
                     </div>
                     <div style="width: 60px;">
-                        <div style="font-size: 10px; color:#888; margin-bottom:2px;">Лимит</div>
-                        <input type="number" id="ar-limit-input" style="width: 100%; padding: 4px; border:1px solid #ddd; border-radius: 4px;">
+                        <div style="${styles.labelSmall}">Лимит</div>
+                        <input type="number" id="ar-limit-input" style="${styles.input}">
                     </div>
                 </div>
-
-                <div style="display:flex; gap:8px; margin-bottom:8px;">
+        
+                <div style="${styles.row}">
                     <div style="flex:1;">
-                        <div style="font-size:10px; color:#888; margin-bottom:2px;">Время чтения вакансии (мс)</div>
+                        <div style="${styles.labelSmall}">Время чтения вакансии (мс)</div>
                         <div style="display:flex; gap:4px;">
-                            <input type="number" id="ar-view-min" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;" placeholder="Min">
-                            <input type="number" id="ar-view-max" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;" placeholder="Max">
+                            <input type="number" id="ar-view-min" style="${styles.input}" placeholder="Min">
+                            <input type="number" id="ar-view-max" style="${styles.input}" placeholder="Max">
                         </div>
                     </div>
                 </div>
-
-                <div style="display:flex; gap:8px; margin-bottom:12px;">
+        
+                <div style="${styles.row}">
                     <div style="flex:1;">
-                        <div style="font-size:10px; color:#888; margin-bottom:2px;">Задержки действий (мс)</div>
+                        <div style="${styles.labelSmall}">Задержки действий (мс)</div>
                         <div style="display:flex; gap:4px;">
-                            <input type="number" id="ar-action-min" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;" placeholder="Min">
-                            <input type="number" id="ar-action-max" style="width:100%; padding:4px; border:1px solid #ddd; border-radius:4px;" placeholder="Max">
+                            <input type="number" id="ar-action-min" style="${styles.input}" placeholder="Min">
+                            <input type="number" id="ar-action-max" style="${styles.input}" placeholder="Max">
                         </div>
                     </div>
                 </div>
-
+        
                 <div style="display: flex; gap: 8px; margin-bottom:8px;">
-                    <button id="ar-start-btn" style="flex: 1; padding: 8px; background: #22c55e; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;">START</button>
-                    <button id="ar-stop-btn" style="flex: 1; padding: 8px; background: #ef4444; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;">STOP</button>
+                    <button id="ar-start-btn" style="${styles.btnStart}">START</button>
+                    <button id="ar-stop-btn"  style="${styles.btnStop}">STOP</button>
                 </div>
-
                 <div style="display:flex; gap:8px; margin-bottom:10px;">
-                    <button id="ar-health-btn" style="flex:1; padding:6px; border-radius:6px; border:1px solid #ddd; cursor:pointer;">Healthcheck</button>
-                    <button id="ar-reset-history" style="flex:1; padding:6px; border-radius:6px; border:1px solid #ddd; cursor:pointer;">Reset history</button>
+                    <button id="ar-health-btn"    style="${styles.btnSecondary}">Healthcheck</button>
+                    <button id="ar-reset-history" style="${styles.btnSecondary}">Reset history</button>
                 </div>
-
             </div>
-            <div style="padding: 12px; border-top: 1px solid #eee;">
+            <div style="${styles.footer}">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <b>Сохранённые для ручного отклика</b>
+                    <b>Ручной отклик</b>
                     <div style="display:flex; gap:6px;">
-                        <button id="ar-export-manual" style="padding:6px; border-radius:6px; border:1px solid #ddd; cursor:pointer;">Export</button>
-                        <button id="ar-clear-manual" style="padding:6px; border-radius:6px; border:1px solid #ddd; cursor:pointer;">Clear</button>
+                        <button id="ar-export-manual" style="${styles.btnSecondary}">Export</button>
+                        <button id="ar-clear-manual"  style="${styles.btnSecondary}">Clear</button>
                     </div>
                 </div>
-                <div id="ar-manual-list" style="max-height:120px; overflow:auto; font-size:12px; border:1px solid #f0f0f0; padding:6px; border-radius:6px; background:#fafafa"></div>
+                <div id="ar-manual-list" style="${styles.manualList}"></div>
             </div>
-            <div id="ar-log-box" style="height: 140px; overflow-y: auto; background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 11px; padding: 8px; border-top: 1px solid #333;"></div>
+            <div id="ar-log-box" style="${styles.logBox}"></div>
         `;
-
         document.body.appendChild(panel);
 
         const el = (id) => document.getElementById(id);
-
-        el('ar-cover-text').value = config.coverText;
+        el('ar-cover-text'     ).value   = config.coverText;
         el('ar-use-cover-check').checked = config.useCover;
-        el('ar-min-delay').value = config.delayMin;
-        el('ar-max-delay').value = config.delayMax;
-        el('ar-limit-input').value = config.limit;
-        el('ar-view-min').value = config.viewMin;
-        el('ar-view-max').value = config.viewMax;
-        el('ar-action-min').value = config.actionDelayMin;
-        el('ar-action-max').value = config.actionDelayMax;
+        el('ar-min-delay'      ).value   = config.delayMin;
+        el('ar-max-delay'      ).value   = config.delayMax;
+        el('ar-limit-input'    ).value   = config.limit;
+        el('ar-view-min'       ).value   = config.viewMin;
+        el('ar-view-max'       ).value   = config.viewMax;
+        el('ar-action-min'     ).value   = config.actionDelayMin;
+        el('ar-action-max'     ).value   = config.actionDelayMax;
 
         const saveSettings = () => {
-            config.coverText = el('ar-cover-text').value;
-            config.useCover = el('ar-use-cover-check').checked;
-            config.delayMin = +el('ar-min-delay').value || DEFAULTS.delayMin;
-            config.delayMax = +el('ar-max-delay').value || DEFAULTS.delayMax;
-            config.limit = +el('ar-limit-input').value || DEFAULTS.limit;
-            config.viewMin = +el('ar-view-min').value || DEFAULTS.viewMin;
-            config.viewMax = +el('ar-view-max').value || DEFAULTS.viewMax;
-            config.actionDelayMin = +el('ar-action-min').value || DEFAULTS.actionDelayMin;
-            config.actionDelayMax = +el('ar-action-max').value || DEFAULTS.actionDelayMax;
-            if (config.delayMin > config.delayMax) [config.delayMin, config.delayMax] = [config.delayMax, config.delayMin];
-            if (config.viewMin > config.viewMax) [config.viewMin, config.viewMax] = [config.viewMax, config.viewMin];
+            config.coverText      =  el('ar-cover-text'     ).value;
+            config.useCover       =  el('ar-use-cover-check').checked;
+            config.delayMin       = +el('ar-min-delay'      ).value || DEFAULTS.delayMin;
+            config.delayMax       = +el('ar-max-delay'      ).value || DEFAULTS.delayMax;
+            config.limit          = +el('ar-limit-input'    ).value || DEFAULTS.limit;
+            config.viewMin        = +el('ar-view-min'       ).value || DEFAULTS.viewMin;
+            config.viewMax        = +el('ar-view-max'       ).value || DEFAULTS.viewMax;
+            config.actionDelayMin = +el('ar-action-min'     ).value || DEFAULTS.actionDelayMin;
+            config.actionDelayMax = +el('ar-action-max'     ).value || DEFAULTS.actionDelayMax;
+            if (config.delayMin       > config.delayMax)       [config.delayMin,       config.delayMax]       = [config.delayMax,       config.delayMin];
+            if (config.viewMin        > config.viewMax)        [config.viewMin,        config.viewMax]        = [config.viewMax,        config.viewMin];
             if (config.actionDelayMin > config.actionDelayMax) [config.actionDelayMin, config.actionDelayMax] = [config.actionDelayMax, config.actionDelayMin];
             StateManager.saveConfig(config);
             log('Настройки сохранены.');
@@ -806,8 +791,8 @@
         ['ar-cover-text', 'ar-use-cover-check', 'ar-min-delay', 'ar-max-delay', 'ar-limit-input', 'ar-view-min', 'ar-view-max', 'ar-action-min', 'ar-action-max'].forEach(id => el(id).addEventListener('change', saveSettings));
 
         el('ar-start-btn').onclick = startLoop;
-        el('ar-stop-btn').onclick = () => {
-            stopSignal = true;
+        el('ar-stop-btn').onclick  = () => {
+            stopSignal   = true;
             isLoopActive = false;
             StateManager.setRunning(false);
             el('ar-status-text').textContent = 'Остановлено';
@@ -832,14 +817,12 @@
             }
         };
 
-        // Export: HTML, humanized dates, single URL column, dedupe by URL
-        el('ar-export-manual').onclick = () => {
-            const list = StateManager.getManualList();
+        el('ar-export-manual').onclick = () => {                                                                                // Export: HTML, humanized dates, single URL column, dedupe by URL
+            const list   = StateManager.getManualList();
             if (!list || !list.length) { alert('Список пуст'); return; }
 
-            // dedupe by url (avoid duplicate identical links)
-            const seen = new Set();
-            const uniq = [];
+            const seen   = new Set();                                                                                           // dedupe by url (avoid duplicate identical links)
+            const uniq   = [];
             for (const it of list) {
                 const key = String(it.url || it.vid || '').trim();
                 if (!key) continue;
@@ -848,27 +831,27 @@
                 uniq.push(it);
             }
 
-            const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            const esc    = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
             const humanAgo = (ts) => {
-                const d = Date.now() - ts;
+                const d  = Date.now() - ts;
                 const sec = Math.floor(d/1000);
                 if (sec < 60) return sec + 's';
                 const min = Math.floor(sec/60);
                 if (min < 60) return min + 'm';
-                const hr = Math.floor(min/60);
+                const hr  = Math.floor(min/60);
                 if (hr < 24) return hr + 'h';
                 const day = Math.floor(hr/24);
                 return day + 'd';
             };
 
-            const rows = uniq.map(i => {
-                const ts = new Date(i.ts || Date.now());
+            const rows   = uniq.map(i => {
+                const ts      = new Date(i.ts || Date.now());
                 const timestr = ts.toLocaleString();
-                const ago = humanAgo(i.ts || Date.now());
-                const vid = esc(i.vid || '');
-                const title = esc(i.title || '');
-                const url = esc(i.url || '');
+                const ago     = humanAgo(i.ts || Date.now());
+                const vid     = esc(i.vid || '');
+                const title   = esc(i.title || '');
+                const url     = esc(i.url || '');
                 return `<tr>
                     <td style="padding:8px;border:1px solid #eee;white-space:nowrap;">${timestr}<div style="color:#7b8794;font-size:11px">${ago} ago</div></td>
                     <td style="padding:8px;border:1px solid #eee">${vid}</td>
@@ -892,63 +875,62 @@
                 <table><thead><tr><th>saved</th><th>vid</th><th>link</th></tr></thead><tbody>${rows}</tbody></table>
                 </body></html>`;
 
-            const blob = new Blob([content], { type: 'text/html;charset=utf-8' });
+            const blob    = new Blob([content], { type : 'text/html;charset=utf-8' });
             const urlBlob = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = urlBlob; a.download = 'hh_manual_list.html';
+            const a       = document.createElement('a'); a.href = urlBlob; a.download = 'hh_manual_list.html';
             document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(urlBlob);
             log('HTML экспорт выполнен.');
         };
 
         const toggleVisibility = (isOpen) => {
-            panel.style.display = isOpen ? 'block' : 'none';
-            toggleBtn.style.display = isOpen ? 'none' : 'flex';
+            panel.style.display     = isOpen ? 'block' : 'none';
+            toggleBtn.style.display = isOpen ? 'none'  : 'flex';
         };
         el('ar-minimize-btn').onclick = () => toggleVisibility(false);
         toggleBtn.onclick = () => toggleVisibility(true);
 
-        // render manual list in UI
-        function renderManualList() {
+        function renderManualList() {                                                                                           // render manual list in UI
             const container = document.getElementById('ar-manual-list');
             if (!container) return;
             container.innerHTML = '';
-            const list = StateManager.getManualList();
+            const list   = StateManager.getManualList();
             if (!list || !list.length) {
                 container.innerHTML = '<div style="color:#666;">Пусто</div>';
                 return;
             }
             list.forEach(item => {
                 const row = document.createElement('div');
-                row.style.display = 'flex';
-                row.style.justifyContent = 'space-between';
-                row.style.alignItems = 'center';
-                row.style.padding = '6px 4px';
-                row.style.borderBottom = '1px solid #eee';
+                      row.style.display            = 'flex';
+                      row.style.justifyContent     = 'space-between';
+                      row.style.alignItems         = 'center';
+                      row.style.padding            = '6px 4px';
+                      row.style.borderBottom       = '1px solid #eee';
 
-                const left = document.createElement('div');
-                left.style.flex = '1';
-                left.style.marginRight = '8px';
-                const time = new Date(item.ts).toLocaleString();
-                left.innerHTML = `<div style="font-size:11px;color:#333;margin-bottom:2px;">${item.vid} • ${time}</div><div style="font-size:11px;color:#0077cc;word-break:break-all"><a href="${item.url}" target="_blank">Открыть страницу с вопросами</a></div>`;
+                const time                         = new Date(item.ts).toLocaleString();
+                const left                         = document.createElement('div');
+                      left.style.flex              = '1';
+                      left.style.marginRight       = '8px';
+                      left.innerHTML               = `<div style="font-size:11px;color:#333;margin-bottom:2px;">${item.vid} • ${time}</div><div style="font-size:11px;color:#0077cc;word-break:break-all"><a href="${item.url}" target="_blank">Открыть страницу с вопросами</a></div>`;
 
-                const actions = document.createElement('div');
-                actions.style.display = 'flex';
-                actions.style.gap = '6px';
+                const actions                      = document.createElement('div');
+                      actions.style.display        = 'flex';
+                      actions.style.gap            = '6px';
 
-                const openBtn = document.createElement('button');
-                openBtn.textContent = 'Open';
-                openBtn.style.padding = '4px 6px';
-                openBtn.style.borderRadius = '6px';
-                openBtn.style.border = '1px solid #ddd';
-                openBtn.style.cursor = 'pointer';
-                openBtn.onclick = () => window.open(item.url, '_blank');
+                const openBtn                      = document.createElement('button');
+                      openBtn.textContent          = 'Open';
+                      openBtn.style.padding        = '4px 6px';
+                      openBtn.style.borderRadius   = '6px';
+                      openBtn.style.border         = '1px solid #ddd';
+                      openBtn.style.cursor         = 'pointer';
+                      openBtn.onclick              = () => window.open(item.url, '_blank');
 
-                const removeBtn = document.createElement('button');
-                removeBtn.textContent = 'Remove';
-                removeBtn.style.padding = '4px 6px';
-                removeBtn.style.borderRadius = '6px';
-                removeBtn.style.border = '1px solid #ddd';
-                removeBtn.style.cursor = 'pointer';
-                removeBtn.onclick = () => { StateManager.removeManualEntry(item.vid); renderManualList(); };
+                const removeBtn                    = document.createElement('button');
+                      removeBtn.textContent        = 'Remove';
+                      removeBtn.style.padding      = '4px 6px';
+                      removeBtn.style.borderRadius = '6px';
+                      removeBtn.style.border       = '1px solid #ddd';
+                      removeBtn.style.cursor       = 'pointer';
+                      removeBtn.onclick            = () => { StateManager.removeManualEntry(item.vid); renderManualList(); };
 
                 actions.appendChild(openBtn);
                 actions.appendChild(removeBtn);
@@ -959,63 +941,55 @@
             });
         }
 
-        // initial render
-        renderManualList();
-
-        // expose render function for other parts of script
-        window._hh_ar_renderManualList = renderManualList;
+        renderManualList();                                                                                                     // initial render
+        window._hh_ar_renderManualList = renderManualList;                                                                      // expose render function for other parts of script
     }
 
-    // Пробегает по ключевым селекторам и пишет результат в лог
-    function runHealthCheck() {
-        const checks = [
-            { name: 'Кнопка отклика (list)', sel: SELECTORS.applyBtn },
-            { name: 'Верхняя кнопка отклика (vacancy page)', sel: SELECTORS.topApply },
-            { name: 'Ссылка вакансии (card)', sel: SELECTORS.vacancyLink },
-            { name: 'modal submit', sel: SELECTORS.modalSubmit },
-            { name: 'modal textarea', sel: SELECTORS.modalTextarea }
+    function runHealthCheck() {                                                                                                 // Пробегает по ключевым селекторам и пишет результат в лог
+        const checks     = [
+            { name : 'Кнопка отклика (list)',                 sel : SELECTORS.applyBtn },
+            { name : 'Верхняя кнопка отклика (vacancy page)', sel : SELECTORS.topApply },
+            { name : 'Ссылка вакансии (card)',                sel : SELECTORS.vacancyLink },
+            { name : 'modal submit',                          sel : SELECTORS.modalSubmit },
+            { name : 'modal textarea',                        sel : SELECTORS.modalTextarea }
         ];
         log('Запускаю HealthCheck...');
         checks.forEach(c => {
-            const found = document.querySelector(c.sel);
+            const found  = document.querySelector(c.sel);
             log(`${c.name}: ${found ? 'OK' : 'НЕ НАЙДЕНО'} (${c.sel})`, !found);
         });
-        const raw = localStorage.getItem(KEYS.instanceLock);
+        const raw        = localStorage.getItem(KEYS.instanceLock);
         if (raw) {
             try {
                 const obj = JSON.parse(raw);
                 log(`Instance lock: tabId=${obj.tabId} ts=${new Date(obj.ts).toLocaleTimeString()}`);
-            } catch (e) { log('Instance lock: ошибка чтения', true); }
+            } catch (e)  { log('Instance lock: ошибка чтения', true); }
         } else {
             log('Instance lock: отсутствует');
         }
     }
 
-    // Инициализация
-    watchTheURL();
+    watchTheURL();                                                                                                              // Инициализация
 
     const domReadyObserver = new MutationObserver((mutations, obs) => {
         if (document.body) {
             setupUI();
-            // Авто-возобновление, если скрипт был в работе перед перезагрузкой
-            if (StateManager.amIRunning()) {
+            if (StateManager.amIRunning()) {                                                                                    // Авто-возобновление, если скрипт был в работе перед перезагрузкой
                 log('Обнаружена незавершенная работа. Авто-возобновление через 1.5 сек...');
                 const statusEl = document.getElementById('ar-status-text');
-                if(statusEl) statusEl.textContent = 'Авто-запуск...';
+                if(statusEl)   statusEl.textContent = 'Авто-запуск...';
                 setTimeout(() => {
                     const startButton = document.getElementById('ar-start-btn');
                     if (startButton) startButton.click();
                 }, 1500);
             }
-            // Сбрасываем ловушку при открытии новых страниц
-            StateManager.clearTrapLock();
+            StateManager.clearTrapLock();                                                                                       // Сбрасываем ловушку при открытии новых страниц
             obs.disconnect();
         }
     });
-    domReadyObserver.observe(document.documentElement, { childList: true, subtree: true });
+    domReadyObserver.observe(document.documentElement, { childList : true, subtree : true });
 
-    // Очищаем instance lock при закрытии вкладки
-    window.addEventListener('beforeunload', () => {
+    window.addEventListener('beforeunload', () => {                                                                             // Очищаем instance lock при закрытии вкладки
         StateManager.releaseInstanceLock(TAB_ID);
     });
     window.addEventListener('unload', () => {
