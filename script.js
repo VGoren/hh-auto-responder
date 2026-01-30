@@ -42,6 +42,12 @@
     };
 
     const DEFAULTS       = {                                                                                                    // Параметры по умолчанию
+        templates        : [
+            { name: 'Стандартный', text: 'Добрый день! Заинтересовала ваша вакансия. Опыт релевантен, подробности в резюме. Буду рад обратной связи!' },
+            { name: 'Краткий', text: 'Здравствуйте! Прошу рассмотреть мою кандидатуру. Спасибо!' },
+            { name: 'Опытный', text: 'Добрый день! Имею большой опыт в данной сфере. Мои навыки идеально подходят под ваши требования. Готов обсудить детали.' }
+        ],
+        selectedTemplate : 0,
         coverText        : 'Добрый день! Заинтересовала ваша вакансия. Опыт релевантен, подробности в резюме. Буду рад обратной связи!',
         useCover         : true,
         delayMin         : 2000,
@@ -700,6 +706,8 @@
                 <label style="${styles.label}">
                     <input type="checkbox" id="ar-use-cover-check"> Сопроводительное письмо
                 </label>
+                <div style="${styles.labelSmall}">Выбор шаблона</div>
+                <select id="ar-template-select" style="${styles.input}; margin-bottom: 8px;"></select>
                 <textarea id="ar-cover-text" rows="4" style="${styles.textarea}"></textarea>
         
                 <div style="${styles.row}">
@@ -761,6 +769,16 @@
         document.body.appendChild(panel);
 
         const el = (id) => document.getElementById(id);
+        
+        const templateSelect = el('ar-template-select');                                                                         // Заполнение выпадающего списка шаблонов
+        config.templates.forEach((t, i) => {
+            const opt       = document.createElement('option');
+            opt.value       = i;
+            opt.textContent = t.name;
+            templateSelect.appendChild(opt);
+        });
+        templateSelect.value = config.selectedTemplate;
+
         el('ar-cover-text'     ).value   = config.coverText;
         el('ar-use-cover-check').checked = config.useCover;
         el('ar-min-delay'      ).value   = config.delayMin;
@@ -772,7 +790,10 @@
         el('ar-action-max'     ).value   = config.actionDelayMax;
 
         const saveSettings = () => {
-            config.coverText      =  el('ar-cover-text'     ).value;
+            config.coverText        = el('ar-cover-text').value;
+            config.selectedTemplate = +templateSelect.value;
+            config.templates[config.selectedTemplate].text = config.coverText;                                                  // Сохраняем текст в текущий выбранный шаблон
+
             config.useCover       =  el('ar-use-cover-check').checked;
             config.delayMin       = +el('ar-min-delay'      ).value || DEFAULTS.delayMin;
             config.delayMax       = +el('ar-max-delay'      ).value || DEFAULTS.delayMax;
@@ -787,6 +808,12 @@
             StateManager.saveConfig(config);
             log('Настройки сохранены.');
         };
+
+        templateSelect.addEventListener('change', () => {                                                                       // Логика переключения шаблона
+            const idx = +templateSelect.value;
+            el('ar-cover-text').value = config.templates[idx].text;
+            saveSettings();
+        });
 
         ['ar-cover-text', 'ar-use-cover-check', 'ar-min-delay', 'ar-max-delay', 'ar-limit-input', 'ar-view-min', 'ar-view-max', 'ar-action-min', 'ar-action-max'].forEach(id => el(id).addEventListener('change', saveSettings));
 
