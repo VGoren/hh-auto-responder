@@ -26,7 +26,8 @@
                                instanceLock     : STORAGE_PREFIX + 'instance_lock',
                                lastAttempt      : STORAGE_PREFIX + 'last_attempt_id',
                                state            : STORAGE_PREFIX + 'state',
-                               manualList       : STORAGE_PREFIX + 'manual_list'
+                               manualList       : STORAGE_PREFIX + 'manual_list',
+                               sessionCount     : STORAGE_PREFIX + 'session_count'
                            },
     SELECTORS            = {                                                                                                    // Важные селекторы, используемые в скрипте
                                applyBtn         : '[data-qa="vacancy-serp__vacancy_response"], button[data-qa="vacancy-serp__vacancy_response"]',
@@ -64,29 +65,38 @@
                            };
 
     const StateManager   = {                                                                                                    // Небольшой менеджер состояния — работа с local/session storage
-        loadConfig       : ()       => {
-            try          { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEYS.settings) || '{}'), ...DEFAULTS_FIXED }; }
-            catch        { return { ...DEFAULTS,                                                             ...DEFAULTS_FIXED }; }
-        },
-        saveConfig       : (s)      => localStorage.setItem(KEYS.settings, JSON.stringify(s)),
-        getProcessedIDs  : ()       => {
-            try          { return new Set(JSON.parse(sessionStorage.getItem(KEYS.history) || '[]')); }
-            catch        { return new Set(); }
-        },
-        addProcessedID   : (id)     => {
-            const s      = StateManager.getProcessedIDs();
-            s.add(id);
-            sessionStorage.setItem(KEYS.history, JSON.stringify([...s]));
-        },
-        clearProcessedIDs: ()       =>         sessionStorage.removeItem(KEYS.history),
-        amIRunning       : ()       =>         sessionStorage.getItem   (KEYS.isRunning) === '1',
-        setRunning       : (state)  => state ? sessionStorage.setItem   (KEYS.isRunning, '1') : sessionStorage.removeItem(KEYS.isRunning),
-        setReturnUrl     : (url)    =>         sessionStorage.setItem   (KEYS.returnUrl, url || location.href),
-        getReturnUrl     : ()       =>         sessionStorage.getItem   (KEYS.returnUrl),
-        setF5Needed      : ()       =>         sessionStorage.setItem   (KEYS.needF5, '1'),
-        isF5Needed       : ()       =>         sessionStorage.getItem   (KEYS.needF5) === '1',
-        clearF5Flag      : ()       =>         sessionStorage.removeItem(KEYS.needF5),
-        setTrapLock      : ()       => {                                                                                              // "Ловушка" — пометка, что мы уже обрабатываем возврат с тестовой страницы
+        loadConfig         : ()      => {
+                                           try          { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEYS.settings) || '{}'), ...DEFAULTS_FIXED }; }
+                                           catch        { return { ...DEFAULTS,                                                             ...DEFAULTS_FIXED }; }
+                                        },
+        saveConfig         : (s)     => localStorage.setItem(KEYS.settings, JSON.stringify(s)),
+        getProcessedIDs    : ()      => {
+                                           try          { return new Set(JSON.parse(sessionStorage.getItem(KEYS.history) || '[]')); }
+                                           catch        { return new Set(); }
+                                        },
+        addProcessedID     : (id)    => {
+                                           const s      = StateManager.getProcessedIDs();
+                                           s.add(id);
+                                           sessionStorage.setItem(KEYS.history, JSON.stringify([...s]));
+                                        },
+        clearProcessedIDs  : ()      => { 
+                                           sessionStorage.removeItem(KEYS.history);
+                                           sessionStorage.removeItem(KEYS.sessionCount);
+                                        },
+        getSessionCount    : ()      => parseInt(sessionStorage.getItem(KEYS.sessionCount) || '0', 10),
+        incSessionCount    : ()      => {
+                                           const current = StateManager.getSessionCount() + 1;
+                                           sessionStorage.setItem(KEYS.sessionCount, current.toString());
+                                           return current;
+                                        },
+        amIRunning         : ()      =>         sessionStorage.getItem   (KEYS.isRunning) === '1',
+        setRunning         : (state) => state ? sessionStorage.setItem   (KEYS.isRunning, '1') : sessionStorage.removeItem(KEYS.isRunning),
+        setReturnUrl       : (url)   =>         sessionStorage.setItem   (KEYS.returnUrl, url || location.href),
+        getReturnUrl       : ()      =>         sessionStorage.getItem   (KEYS.returnUrl),
+        setF5Needed        : ()      =>         sessionStorage.setItem   (KEYS.needF5, '1'),
+        isF5Needed         : ()      =>         sessionStorage.getItem   (KEYS.needF5) === '1',
+        clearF5Flag        : ()      =>         sessionStorage.removeItem(KEYS.needF5),
+        setTrapLock        : ()      => {                                                                                              // "Ловушка" — пометка, что мы уже обрабатываем возврат с тестовой страницы
                                            sessionStorage.setItem(KEYS.trapLock, '1');
                                            setTimeout(()           => {                                                                                                  // авто-очистка через 15 сек, если что-то пошло не так
                                                if (sessionStorage.getItem(KEYS.trapLock) === '1') {
@@ -94,66 +104,66 @@
                                                    log('Очистил ar_trap_lock по таймауту.');
                                                }
                                            }, 15000);
-                                       },
-        clearTrapLock    : ()       => sessionStorage.removeItem(KEYS.trapLock),
-        hasTrapLock      : ()       => sessionStorage.getItem(KEYS.trapLock) === '1',
-        setLastAttemptID : (id)     => {                                                                                            // Запоминаем последнюю попытку отклика — пригодится при редиректах
-            if (id)      sessionStorage.setItem(KEYS.lastAttempt, id);
-        },
-        getLastAttemptID : ()       => sessionStorage.getItem(KEYS.lastAttempt),
-        clearLastAttemptID:()       => sessionStorage.removeItem(KEYS.lastAttempt),
-        acquireInstanceLock:(tabId) => {                                                                                        // Простая кросс-вкладочная блокировка (instance lock)
-            try {
-                const now = Date.now();
-                const raw = localStorage.getItem(KEYS.instanceLock);
-                if (raw) {
-                    const obj = JSON.parse(raw);
-                    if (now - obj.ts < config.instanceLockTtl && obj.tabId !== tabId) {
-                        return false;
-                    }
-                }
-                localStorage.setItem(KEYS.instanceLock, JSON.stringify({ tabId : tabId, ts : now }));
-                return true;
-            } catch (e)  { return true; }
-        },
-        releaseInstanceLock:(tabId) => {
-            try {
-                const raw = localStorage.getItem(KEYS.instanceLock);
-                if (!raw) return;
-                const obj = JSON.parse(raw);
-                if (obj.tabId === tabId) localStorage.removeItem(KEYS.instanceLock);
-            } catch (e)  { /* ignore */ }
-        },
-        touchInstanceLock: (tabId)  => {                                                                                         // Обновляем timestamp блокировки, чтобы другие вкладки видели, что мы живы
-            try {
-                const raw = localStorage.getItem(KEYS.instanceLock);
-                if (!raw) return;
-                const obj = JSON.parse(raw);
-                if (obj.tabId === tabId) localStorage.setItem(KEYS.instanceLock, JSON.stringify({ tabId : tabId, ts : Date.now() }));
-            } catch (e)  { /* ignore */ }
-        },
-        getManualList    : ()       => {                                                                                              // --- manual list (vacancies that require manual answering) ---
-            try          { return JSON.parse(localStorage.getItem(KEYS.manualList) || '[]'); }
-            catch        { return []; }
-        },
-        addManualEntry   : (entry)  => {
-            try {
-                const list   = StateManager.getManualList();
-                const exists = list.find(e => e.vid === entry.vid || e.url === entry.url);
-                if (!exists) {
-                    list.unshift(entry);
-                    if (list.length > 500) list.length = 500;                                                                   // ограничим длину списка, чтобы не раздувался
-                    localStorage.setItem(KEYS.manualList, JSON.stringify(list));
-                }
-            } catch (e)  { console.warn('addManualEntry error', e); }
-        },
-        removeManualEntry: (vid) => {
-            try {
-                const list = StateManager.getManualList().filter(e => e.vid !== vid);
-                localStorage.setItem(KEYS.manualList, JSON.stringify(list));
-            } catch (e)  { console.warn('removeManualEntry error', e); }
-        },
-        clearManualList  : () => localStorage.removeItem(KEYS.manualList)
+                                        },
+        clearTrapLock      : ()      => sessionStorage.removeItem(KEYS.trapLock),
+        hasTrapLock        : ()      => sessionStorage.getItem(KEYS.trapLock) === '1',
+        setLastAttemptID   : (id)    => {                                                                                            // Запоминаем последнюю попытку отклика — пригодится при редиректах
+                                           if (id)      sessionStorage.setItem(KEYS.lastAttempt, id);
+                                        },
+        getLastAttemptID   : ()      => sessionStorage.getItem(KEYS.lastAttempt),
+        clearLastAttemptID : ()      => sessionStorage.removeItem(KEYS.lastAttempt),
+        acquireInstanceLock: (tabId) => {                                                                                        // Простая кросс-вкладочная блокировка (instance lock)
+                                           try {
+                                               const now = Date.now();
+                                               const raw = localStorage.getItem(KEYS.instanceLock);
+                                               if (raw) {
+                                                   const obj = JSON.parse(raw);
+                                                   if (now - obj.ts < config.instanceLockTtl && obj.tabId !== tabId) {
+                                                       return false;
+                                                   }
+                                               }
+                                               localStorage.setItem(KEYS.instanceLock, JSON.stringify({ tabId : tabId, ts : now }));
+                                               return true;
+                                           } catch (e)  { return true; }
+                                        },
+        releaseInstanceLock: (tabId) => {
+                                           try {
+                                               const raw = localStorage.getItem(KEYS.instanceLock);
+                                               if (!raw) return;
+                                               const obj = JSON.parse(raw);
+                                               if (obj.tabId === tabId) localStorage.removeItem(KEYS.instanceLock);
+                                           } catch (e)  { /* ignore */ }
+                                        },
+        touchInstanceLock  : (tabId) => {                                                                                         // Обновляем timestamp блокировки, чтобы другие вкладки видели, что мы живы
+                                           try {
+                                               const raw = localStorage.getItem(KEYS.instanceLock);
+                                               if (!raw) return;
+                                               const obj = JSON.parse(raw);
+                                               if (obj.tabId === tabId) localStorage.setItem(KEYS.instanceLock, JSON.stringify({ tabId : tabId, ts : Date.now() }));
+                                           } catch (e)  { /* ignore */ }
+                                        },
+        getManualList      : ()      => {                                                                                              // --- manual list (vacancies that require manual answering) ---
+                                            try          { return JSON.parse(localStorage.getItem(KEYS.manualList) || '[]'); }
+                                            catch        { return []; }
+                                        },
+        addManualEntry     : (entry) => {
+                                            try {
+                                                const list   = StateManager.getManualList();
+                                                const exists = list.find(e => e.vid === entry.vid || e.url === entry.url);
+                                                if (!exists) {
+                                                    list.unshift(entry);
+                                                    if (list.length > 500) list.length = 500;                                                                   // ограничим длину списка, чтобы не раздувался
+                                                    localStorage.setItem(KEYS.manualList, JSON.stringify(list));
+                                                }
+                                            } catch (e)  { console.warn('addManualEntry error', e); }
+                                        },
+        removeManualEntry  : (vid)   => {
+                                            try {
+                                                const list = StateManager.getManualList().filter(e => e.vid !== vid);
+                                                localStorage.setItem(KEYS.manualList, JSON.stringify(list));
+                                            } catch (e)  { console.warn('removeManualEntry error', e); }
+                                        },
+        clearManualList    : ()      => localStorage.removeItem(KEYS.manualList)
     };
 
     let config           = StateManager.loadConfig();
@@ -524,6 +534,7 @@
                 await actionPause();
                 StateManager.addProcessedID(vid);
                 StateManager.clearLastAttemptID();
+                StateManager.incSessionCount();                                                                                 // Инкремент общего счетчика откликов
                 await wait(1000);
                 await actionPause();
                 history.back();
@@ -559,6 +570,16 @@
         const statusEl   = document.getElementById('ar-status-text');
         if(statusEl)     statusEl.textContent = 'В работе';
 
+        let count        = StateManager.getSessionCount();                                                                      // Загружаем текущий прогресс из сессии
+
+        if (count >= config.limit) {
+            log(`Лимит (${config.limit}) уже достигнут. Сбросьте историю для продолжения.`);
+            isLoopActive = false;
+            StateManager.setRunning(false);
+            if(statusEl) statusEl.textContent = 'Лимит достигнут';
+            return;
+        }
+
         if (location.pathname.startsWith('/vacancy/')) {                                                                        // Если уже на странице вакансии — обрабатываем её напрямую
             log('На странице вакансии — продолжаю обработку тут.');
             const res    = await processVacancy();
@@ -587,8 +608,7 @@
             return !processed.has(getVacancyID(b));
         });
 
-        log(`Найдено вакансий: ${allBtns.length}. Новых к обработке: ${targets.length}.`);
-        let count        = 0;
+        log(`Найдено вакансий: ${allBtns.length}. Новых к обработке: ${targets.length}. Текущий счетчик: ${count}`);
 
         for (const btn of targets) {
             if (stopSignal || count >= config.limit) break;
@@ -602,7 +622,7 @@
             const result = await processVacancy(btn);
 
             if (result === 'OK') {
-                count++;
+                count = StateManager.getSessionCount();                                                                         // Получаем обновленное значение после processVacancy
                 log(`Отклик #${count} отправлен.`);
                 await actionPause();
             } else if (result === 'NAVIGATED') {
@@ -622,7 +642,7 @@
         if (!location.href.includes('/applicant/vacancy_response')) {
              isLoopActive = false;
              StateManager.setRunning(false);
-             if(statusEl) statusEl.textContent = 'Завершено';
+             if(statusEl) statusEl.textContent = count >= config.limit ? 'Лимит достигнут' : 'Завершено';
              log(`Работа завершена. Отправлено всего: ${count}`);
         }
     }
@@ -820,7 +840,7 @@
 
         el('ar-reset-history').onclick = () => {
             StateManager.clearProcessedIDs();
-            log('История откликов сброшена.');
+            log('История откликов и счетчик сброшены.');
         };
 
         el('ar-health-btn').onclick = () => {
