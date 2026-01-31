@@ -674,58 +674,74 @@
         if (document.getElementById('ar-main-panel')) return;
 
         const styles = {
-            toggleBtn   : `
-                          position       : fixed; 
-                          top            : 50%; 
-                          right          : 20px; 
-                          transform      : translateY(-50%);
-                          width          : 48px; 
-                          height         : 48px;
-                          background     : #222; 
-                          color          : #fff; 
-                          border-radius  : 50%; 
-                          display        : none;
-                          align-items    : center; 
-                          justify-content: center; 
-                          font-size      : 24px; 
-                          cursor         : pointer;
-                          z-index        : 99999; 
-                          box-shadow     : 0 4px 12px rgba(0,0,0,0.3); 
-                          border         : 2px solid #fff;
-                          user-select    : none; 
-                          transition     : all 0.2s;
-                          `,
-            panel       : `
-                          position       : fixed;
-                          bottom         : 20px;
-                          right          : 20px;
-                          width          : 600px;
-                          background     : #fff;
-                          border         : 1px solid #e0e0e0;
-                          box-shadow     : 0 4px 20px rgba(0,0,0,0.2);
-                          border-radius  : 12px;
-                          z-index        : 99999;
-                          font-family    : sans-serif;
-                          font-size      : 13px;
-                          color          : #333;
-                          overflow       : hidden;
-                          display        : block;
-                          `,
-            header      : "padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f9f9f9;",
-            status      : "font-weight: bold; color: #666; font-size: 11px;",
-            btnMinimize : "background:none; border:none; cursor:pointer; font-size: 16px; color:#888;",
-            container   : "padding: 12px;",
-            label       : "display:block; margin-bottom: 8px; cursor: pointer;",
-            textarea    : "width: 100%; box-sizing: border-box; border: 1px solid #ddd; padding: 8px; border-radius: 6px; resize: vertical; margin-bottom: 12px; font-family: inherit;",
-            row         : "display: flex; gap: 10px; margin-bottom: 12px;",
-            labelSmall  : "font-size: 10px; color: #888; margin-bottom: 2px;",
-            input       : "width: 100%; padding: 4px; border:1px solid #ddd; border-radius: 4px;",
-            btnStart    : "flex: 1; padding: 8px; background: #22c55e; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;",
-            btnStop     : "flex: 1; padding: 8px; background: #ef4444; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;",
-            btnSecondary: "flex:1; padding:6px; border-radius:6px; border:1px solid #ddd; cursor:pointer;",
-            footer      : "padding: 12px; border-top: 1px solid #eee;",
-            manualList  : "max-height:120px; overflow:auto; font-size:12px; border:1px solid #f0f0f0; padding:6px; border-radius:6px; background:#fafafa",
-            logBox      : "height: 140px; overflow-y: auto; background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 11px; padding: 8px; border-top: 1px solid #333;"
+            toggleBtn           : `
+                                  position       : fixed; 
+                                  top            : 50%; 
+                                  right          : 20px; 
+                                  transform      : translateY(-50%);
+                                  width          : 48px; 
+                                  height         : 48px;
+                                  background     : #222; 
+                                  color          : #fff; 
+                                  border-radius  : 50%; 
+                                  display        : none;
+                                  align-items    : center; 
+                                  justify-content: center; 
+                                  font-size      : 24px; 
+                                  cursor         : pointer;
+                                  z-index        : 99999; 
+                                  box-shadow     : 0 4px 12px rgba(0,0,0,0.3); 
+                                  border         : 2px solid #fff;
+                                  user-select    : none; 
+                                  transition     : all 0.2s;
+                                  `,
+            panel               : `
+                                  position       : fixed;
+                                  bottom         : 20px;
+                                  right          : 20px;
+                                  width          : 600px;
+                                  background     : #fff;
+                                  border         : 1px solid #e0e0e0;
+                                  box-shadow     : 0 4px 20px rgba(0,0,0,0.2);
+                                  border-radius  : 12px;
+                                  z-index        : 99999;
+                                  font-family    : sans-serif;
+                                  font-size      : 13px;
+                                  color          : #333;
+                                  overflow       : hidden;
+                                  display        : block;
+                                  `,
+            header              : "padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f9f9f9;",
+            headerActions       : "display: flex; gap: 8px; align-items: center;",
+            status              : "font-weight: bold; color: #666; font-size: 11px;",
+            btnMinimize         : "background:none; border:none; cursor:pointer; font-size: 16px; color:#888;",
+            container           : "padding: 12px;",
+            label               : "display:block; margin-bottom: 8px; cursor: pointer;",
+            selectGroup         : "display: flex; gap: 10px;",
+            selectCol           : "flex: 1; margin-bottom: 12px;",
+            labelSmall          : "font-size: 10px; color: #888; margin-bottom: 2px;",
+            textarea            : "width: 100%; box-sizing: border-box; border: 1px solid #ddd; padding: 8px; border-radius: 6px; resize: vertical; margin-bottom: 12px; font-family: inherit;",
+            row                 : "display: flex; gap: 10px; margin-bottom: 12px;",
+            inputGroup          : "display: flex; align-items: center; gap: 4px;",
+            input               : "width: 100%; padding: 4px; border:1px solid #ddd; border-radius: 4px;",
+            separator           : "color: #888;",
+            actionRow           : "display: flex; gap: 8px; margin-bottom: 8px;",
+            btnStart            : "flex: 1; padding: 8px; background: #22c55e; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;",
+            btnStop             : "flex: 1; padding: 8px; background: #ef4444; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;",
+            utilityRow          : "display: flex; gap: 8px; margin-bottom: 10px;",
+            btnSecondary        : "flex:1; padding:6px; border-radius:6px; border:1px solid #ddd; cursor:pointer;",
+            footer              : "padding: 12px; border-top: 1px solid #eee;",
+            footerTitle         : "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;",
+            footerActionGroup   : "display: flex; gap: 6px;",
+            manualList          : "max-height:120px; overflow:auto; font-size:12px; border:1px solid #f0f0f0; padding:6px; border-radius:6px; background:#fafafa",
+            emptyMsg            : "color: #666;",
+            manualRow           : "display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; border-bottom: 1px solid #eee;",
+            manualLeft          : "flex: 1; margin-right: 8px;",
+            manualIdText        : "font-size: 11px; color: #333; margin-bottom: 2px;",
+            manualLinkBox       : "font-size: 11px; color: #0077cc; word-break: break-all;",
+            manualActions       : "display: flex; gap: 6px;",
+            manualBtn           : "padding: 4px 6px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer;",
+            logBox              : "height: 140px; overflow-y: auto; background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 11px; padding: 8px; border-top: 1px solid #333;"
         };
 
         const toggleBtn  = document.createElement('div');
@@ -740,7 +756,7 @@
         panel.innerHTML = `
             <div style="${styles.header}">
                 <b>🤖 HH AutoResponder</b>
-                <div style="display:flex; gap: 8px; align-items: center;">
+                <div style="${styles.headerActions}">
                     <span   id="ar-status-text"  style="${styles.status}">Ожидание</span>
                     <button id="ar-minimize-btn" style="${styles.btnMinimize}">—</button>
                 </div>
@@ -749,12 +765,12 @@
                 <label style="${styles.label}">
                     <input type="checkbox" id="ar-use-cover-check"> Сопроводительное письмо
                 </label>
-                <div style="display: flex; gap: 10px;">
-                    <div style="flex: 1; margin-bottom: 12px;">
+                <div style="${styles.selectGroup}">
+                    <div style="${styles.selectCol}">
                         <div style="${styles.labelSmall}">Выберите резюме</div>
                         <select id="ar-resume-select" style="${styles.textarea}; height: auto; padding: 6px;"></select>
                     </div>
-                    <div style="flex: 1; margin-bottom: 12px;">
+                    <div style="${styles.selectCol}">
                         <div style="${styles.labelSmall}">Выберите шаблон</div>
                         <select id="ar-template-select" style="${styles.textarea}; height: auto; padding: 6px;"></select>
                     </div>
@@ -763,9 +779,9 @@
                 <div style="${styles.row}">
                     <div style="flex: 1;">
                         <div style="${styles.labelSmall}">Задержка между действиями (мс)</div>
-                        <div style="display:flex; align-items:center; gap: 4px;">
+                        <div style="${styles.inputGroup}">
                             <input type="number" id="ar-min-delay" style="${styles.input}" placeholder="Min">
-                            <span style="color:#888">-</span>
+                            <span style="${styles.separator}">-</span>
                             <input type="number" id="ar-max-delay" style="${styles.input}" placeholder="Max">
                         </div>
                     </div>
@@ -778,7 +794,7 @@
                 <div style="${styles.row}">
                     <div style="flex:1;">
                         <div style="${styles.labelSmall}">Время чтения вакансии (мс)</div>
-                        <div style="display:flex; gap:4px;">
+                        <div style="${styles.inputGroup}">
                             <input type="number" id="ar-view-min" style="${styles.input}" placeholder="Min">
                             <input type="number" id="ar-view-max" style="${styles.input}" placeholder="Max">
                         </div>
@@ -788,26 +804,26 @@
                 <div style="${styles.row}">
                     <div style="flex:1;">
                         <div style="${styles.labelSmall}">Задержки действий (мс)</div>
-                        <div style="display:flex; gap:4px;">
+                        <div style="${styles.inputGroup}">
                             <input type="number" id="ar-action-min" style="${styles.input}" placeholder="Min">
                             <input type="number" id="ar-action-max" style="${styles.input}" placeholder="Max">
                         </div>
                     </div>
                 </div>
         
-                <div style="display: flex; gap: 8px; margin-bottom:8px;">
+                <div style="${styles.actionRow}">
                     <button id="ar-start-btn" style="${styles.btnStart}">START</button>
                     <button id="ar-stop-btn"  style="${styles.btnStop}">STOP</button>
                 </div>
-                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <div style="${styles.utilityRow}">
                     <button id="ar-health-btn"    style="${styles.btnSecondary}">Healthcheck</button>
                     <button id="ar-reset-history" style="${styles.btnSecondary}">Reset history</button>
                 </div>
             </div>
             <div style="${styles.footer}">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="${styles.footerTitle}">
                     <b>Ручной отклик</b>
-                    <div style="display:flex; gap:6px;">
+                    <div style="${styles.footerActionGroup}">
                         <button id="ar-export-manual" style="${styles.btnSecondary}">Export</button>
                         <button id="ar-clear-manual"  style="${styles.btnSecondary}">Clear</button>
                     </div>
@@ -963,37 +979,32 @@
             container.innerHTML = '';
             const list   = StateManager.getManualList();
             if (!list || !list.length) {
-                container.innerHTML = '<div style="color:#666;">Пусто</div>';
+                container.innerHTML = `<div style="${styles.emptyMsg}">Пусто</div>`;
                 return;
             }
             list.forEach(item => {
                 const row = document.createElement('div');
-                      row.style.display            = 'flex';
-                      row.style.justifyContent     = 'space-between';
-                      row.style.alignItems         = 'center';
-                      row.style.padding            = '6px 4px';
-                      row.style.borderBottom       = '1px solid #eee';
+                      row.style.cssText            = styles.manualRow;
                 const time                         = new Date(item.ts).toLocaleString();
                 const left                         = document.createElement('div');
-                      left.style.flex              = '1';
-                      left.style.marginRight       = '8px';
-                      left.innerHTML               = `<div style="font-size:11px;color:#333;margin-bottom:2px;">${item.vid} • ${time}</div><div style="font-size:11px;color:#0077cc;word-break:break-all"><a href="${item.url}" target="_blank">Открыть страницу с вопросами</a></div>`;
+                      left.style.cssText           = styles.manualLeft;
+                      left.innerHTML               = `
+                                                     <div style="${styles.manualIdText}">
+                                                         ${item.vid} • ${time}
+                                                     </div>
+                                                     <div style="${styles.manualLinkBox}">
+                                                         <a href="${item.url}" target="_blank">Открыть страницу с вопросами</a>
+                                                     </div>
+                                                     `;
                 const actions                      = document.createElement('div');
-                      actions.style.display        = 'flex';
-                      actions.style.gap            = '6px';
+                      actions.style.cssText        = styles.manualActions;
                 const openBtn                      = document.createElement('button');
                       openBtn.textContent          = 'Open';
-                      openBtn.style.padding        = '4px 6px';
-                      openBtn.style.borderRadius   = '6px';
-                      openBtn.style.border         = '1px solid #ddd';
-                      openBtn.style.cursor         = 'pointer';
+                      openBtn.style.cssText        = styles.manualBtn;
                       openBtn.onclick              = () => window.open(item.url, '_blank');
                 const removeBtn                    = document.createElement('button');
                       removeBtn.textContent        = 'Remove';
-                      removeBtn.style.padding      = '4px 6px';
-                      removeBtn.style.borderRadius = '6px';
-                      removeBtn.style.border       = '1px solid #ddd';
-                      removeBtn.style.cursor       = 'pointer';
+                      removeBtn.style.cssText      = styles.manualBtn;
                       removeBtn.onclick            = () => { StateManager.removeManualEntry(item.vid); renderManualList(); };
 
                 actions.appendChild(openBtn);
