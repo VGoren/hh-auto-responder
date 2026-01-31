@@ -334,6 +334,7 @@
                     if (vid) {
                         StateManager.addProcessedID(vid);
                         log(`Пометил вакансию ${vid} как обработанную (чтобы избежать зацикливания).`);
+                        StateManager.incSessionCount();                                                                         // Инкремент счетчика даже при попадании на вопросы
                         StateManager.clearLastAttemptID();
                     } else {
                         log('Не удалось определить ID вакансии на странице с вопросами.', true);
@@ -450,6 +451,7 @@
             if (!applyBtn) {
                 if (location.href.includes('/applicant/vacancy_response')) {                                            // Если нас уже редиректнуло на страницу с вопросами — помечаем вакансию и уходим
                     StateManager.addProcessedID(vid);
+                    StateManager.incSessionCount();                                                                             // Инкремент счетчика при редиректе
                     StateManager.clearLastAttemptID();
                     return 'REDIRECT';
                 }
@@ -500,6 +502,7 @@
             if (!submitButton) {
                 if (location.href.includes('/applicant/vacancy_response')) {
                     StateManager.addProcessedID(vid);
+                    StateManager.incSessionCount();                                                                             // Инкремент счетчика при редиректе (модалка не появилась, но мы на странице теста)
                     StateManager.clearLastAttemptID();
                     return 'REDIRECT';
                 }
