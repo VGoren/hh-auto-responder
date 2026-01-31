@@ -38,18 +38,26 @@
                                nativeWrapper    : '[data-qa="textarea-native-wrapper"]',
                                relocationBtn    : '[data-qa="relocation-warning-confirm"]',
                                vacancyLink      : 'a[data-qa="serp-item__title"], a[data-qa="vacancy-serp__vacancy-title"]',
-                               vacancyCard      : 'div[data-qa="vacancy-serp__vacancy"], .vacancy-serp-item'
+                               vacancyCard      : 'div[data-qa="vacancy-serp__vacancy"], .vacancy-serp-item',
+                               resumeDropdown   : '[data-qa="resume-title"]',
+                               resumeItemBase   : '[data-qa="magritte-select-option-{ID}"]'
                            },
     DEFAULTS_FIXED       = {                                                                                                    // Параметры, которые каждый раз загружаются заново
-                              templates        : [
+                               templates        : [
                                                      { value: 'Добрый день! Заинтересовала ваша вакансия. Опыт релевантен, подробности в резюме. Буду рад обратной связи!' },
                                                      { value: 'Здравствуйте! Прошу рассмотреть мою кандидатуру. Подробности в резюме.' },
                                                      { value: 'Добрый день! Имею коммерческий опыт работы с вашим стеком технологий. Готов обсудить задачи.' }
                                                      ,{ value: 'Добрый день! Имею коммерческий опыт вфывыфвф' }
-                                                 ]
+                                                  ],
+                               resumes          : [
+                                                     { name: 'Не выбирать (текущее)', value: '' },
+                                                     { name: 'SQL-Разработчик',       value: '510669b0ff0ff5b8810039ed1f5945306a6863' },
+                                                     { name: 'Разработчик SQL',       value: '8c5823a8ff0997221f0039ed1f7250444b726c' }
+                                                  ]
                            },
     DEFAULTS             = {                                                                                                    // Параметры, которые загружатся лишь в первый раз, а дальше изменяются
                                selectedTemplate : 0,
+                               selectedResume   : 0,
                                useCover         : true,
                                delayMin         : 2000,
                                delayMax         : 5000,
@@ -182,18 +190,18 @@
     const clamp          = (v, a, b) => Math.max(a, Math.min(b, v));
 
     const log            = (msg, isError = false) => {                                                                          // Лог в панели + консоль
-        const timestamp  = new Date().toLocaleTimeString();
-        const entry      = document.createElement('div');
-        entry.textContent= `[${timestamp}] ${msg}`;
-        if (isError) entry.style.color = '#ff4d4f';
-        const logBox     = document.getElementById('ar-log-box');
-        if (logBox) {
-            logBox.appendChild(entry);
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-        console.log(`[HH-AR] ${msg}`);
-    };
-
+                               const timestamp  = new Date().toLocaleTimeString();
+                               const entry      = document.createElement('div');
+                               entry.textContent= `[${timestamp}] ${msg}`;
+                               if (isError) entry.style.color = '#ff4d4f';
+                               const logBox     = document.getElementById('ar-log-box');
+                               if (logBox) {
+                                   logBox.appendChild(entry);
+                                   logBox.scrollTop = logBox.scrollHeight;
+                               }
+                               console.log(`[HH-AR] ${msg}`);
+                           };
+                           
     function fillTextarea(el, value) {                                                                                          // Корректная вставка текста в textarea (учитывает React/Magritte)
         try {
             const descriptor = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value');
@@ -375,13 +383,10 @@
     }
 
     function getVacancyIDFromHref(href) {                                                                                       // Попытки извлечь ID вакансии из URL в разных форматах
-        if (!href)       return null;
-        const m1         = href.match(/\/vacancy\/(\d+)/);
-        if (m1)          return String(m1[1]);
-        const m2         = href.match(/[?&]vacancyId=(\d+)/);
-        if (m2)          return String(m2[1]);
-        const m3         = href.match(/vacancyId%3D(\d+)/);
-        if (m3)          return String(m3[1]);
+        if (!href) return null;
+        const m1 = href.match(/\/vacancy\/(\d+)/);    if (m1) return String(m1[1]);
+        const m2 = href.match(/[?&]vacancyId=(\d+)/); if (m2) return String(m2[1]);
+        const m3 = href.match(/vacancyId%3D(\d+)/);   if (m3) return String(m3[1]);
         return null;
     }
 
@@ -507,6 +512,21 @@
                     return 'REDIRECT';
                 }
                 return 'ERROR_NO_MODAL';
+            }
+
+            // --- ВЫБОР РЕЗЮМЕ ---
+            const resumeConfig = config.resumes[config.selectedResume];
+            if (resumeConfig && resumeConfig.value) {
+                if (document.querySelector(SELECTORS.resumeDropdown)) {
+                    document.querySelector(SELECTORS.resumeDropdown).click();
+                    await actionPause();
+                    const itemSel = SELECTORS.resumeItemBase.replace('{ID}', resumeConfig.value);
+                    const opt = await waitForElement(itemSel, 2000);
+                    if (opt) {
+                        opt.click();
+                        await actionPause();
+                    }
+                }
             }
 
             if (config.useCover) {
@@ -729,9 +749,15 @@
                 <label style="${styles.label}">
                     <input type="checkbox" id="ar-use-cover-check"> Сопроводительное письмо
                 </label>
-                <div style="margin-bottom: 12px;">
-                    <div style="${styles.labelSmall}">Выберите шаблон</div>
-                    <select id="ar-template-select" style="${styles.textarea}; height: auto; padding: 6px;"></select>
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1; margin-bottom: 12px;">
+                        <div style="${styles.labelSmall}">Выберите резюме</div>
+                        <select id="ar-resume-select" style="${styles.textarea}; height: auto; padding: 6px;"></select>
+                    </div>
+                    <div style="flex: 1; margin-bottom: 12px;">
+                        <div style="${styles.labelSmall}">Выберите шаблон</div>
+                        <select id="ar-template-select" style="${styles.textarea}; height: auto; padding: 6px;"></select>
+                    </div>
                 </div>
         
                 <div style="${styles.row}">
@@ -794,15 +820,23 @@
 
         const el = (id) => document.getElementById(id);
 
+        // Заполнение выпадающих списков
         config.templates.forEach((template, i) => {
             const opt             = document.createElement('option');
                   opt.value       = i;
-                  opt.textContent = template.value.length > 80    ? template.value.slice(0, 80) + '...' : template.value;
+                  opt.textContent = template.value.length > 80 ? template.value.slice(0, 80) + '...' : template.value;
             el('ar-template-select').appendChild(opt);
+        });
+        config.resumes.forEach((resume, i) => {
+            const opt             = document.createElement('option');
+                  opt.value       = i;
+                  opt.textContent = resume.name;
+            el('ar-resume-select').appendChild(opt);
         });
  
         // Групповое заполнение полей
         el('ar-template-select').value    = config.selectedTemplate;
+        el('ar-resume-select').value      = config.selectedResume;
         el('ar-use-cover-check').checked  = config.useCover;
         el('ar-min-delay'      ).value    = config.delayMin;
         el('ar-max-delay'      ).value    = config.delayMax;
@@ -815,6 +849,7 @@
         const saveSettings = () => {
             config.useCover         =  el('ar-use-cover-check').checked;
             config.selectedTemplate = +el('ar-template-select').value    || DEFAULTS.selectedTemplate;
+            config.selectedResume   = +el('ar-resume-select').value      || DEFAULTS.selectedResume;
             config.delayMin         = +el('ar-min-delay'      ).value    || DEFAULTS.delayMin;
             config.delayMax         = +el('ar-max-delay'      ).value    || DEFAULTS.delayMax;
             config.limit            = +el('ar-limit-input'    ).value    || DEFAULTS.limit;
@@ -829,35 +864,31 @@
             log('Настройки сохранены.');
         };
 
-        ['ar-template-select', 'ar-use-cover-check', 'ar-min-delay', 'ar-max-delay', 'ar-limit-input', 'ar-view-min', 'ar-view-max', 'ar-action-min', 'ar-action-max'].forEach(id => el(id).addEventListener('change', saveSettings));
+        ['ar-template-select', 'ar-resume-select', 'ar-use-cover-check', 'ar-min-delay', 'ar-max-delay', 'ar-limit-input', 'ar-view-min', 'ar-view-max', 'ar-action-min', 'ar-action-max'].forEach(id => el(id).addEventListener('change', saveSettings));
 
-        el('ar-start-btn').onclick = startLoop;
-        el('ar-stop-btn').onclick  = () => {
-            stopSignal   = true;
-            isLoopActive = false;
-            StateManager.setRunning(false);
-            el('ar-status-text').textContent = 'Остановлено';
-            StateManager.releaseInstanceLock(TAB_ID);
-            log('Остановлено пользователем.');
-        };
-
+        el('ar-start-btn'    ).onclick = startLoop;
+        el('ar-stop-btn'     ).onclick = () => {
+                                                   stopSignal   = true;
+                                                   isLoopActive = false;
+                                                   StateManager.setRunning(false);
+                                                   el('ar-status-text').textContent = 'Остановлено';
+                                                   StateManager.releaseInstanceLock(TAB_ID);
+                                                   log('Остановлено пользователем.');
+                                               };
         el('ar-reset-history').onclick = () => {
-            StateManager.clearProcessedIDs();
-            log('История откликов и счетчик сброшены.');
-        };
-
-        el('ar-health-btn').onclick = () => {
-            runHealthCheck();
-        };
-
-        el('ar-clear-manual').onclick = () => {
-            if (confirm('Очистить сохранённый список вакансий для ручного отклика?')) {
-                StateManager.clearManualList();
-                renderManualList();
-                log('Список для ручного отклика очищен.');
-            }
-        };
-
+                                                   StateManager.clearProcessedIDs();
+                                                   log('История откликов и счетчик сброшены.');
+                                               };
+        el('ar-health-btn'   ).onclick = () => {
+                                                   runHealthCheck();
+                                               };
+        el('ar-clear-manual' ).onclick = () => {
+                                                   if (confirm('Очистить сохранённый список вакансий для ручного отклика?')) {
+                                                       StateManager.clearManualList();
+                                                       renderManualList();
+                                                       log('Список для ручного отклика очищен.');
+                                                   }
+                                               };
         el('ar-export-manual').onclick = () => {                                                                                // Export: HTML, humanized dates, single URL column, dedupe by URL
             const list   = StateManager.getManualList();
             if (!list || !list.length) { alert('Список пуст'); return; }
@@ -876,14 +907,10 @@
 
             const humanAgo = (ts) => {
                 const d  = Date.now() - ts;
-                const sec = Math.floor(d/1000);
-                if (sec < 60) return sec + 's';
-                const min = Math.floor(sec/60);
-                if (min < 60) return min + 'm';
-                const hr  = Math.floor(min/60);
-                if (hr < 24) return hr + 'h';
-                const day = Math.floor(hr/24);
-                return day + 'd';
+                const sec = Math.floor(d  /1000); if (sec < 60) return sec + 's';
+                const min = Math.floor(sec/60);   if (min < 60) return min + 'm';
+                const hr  = Math.floor(min/60);   if (hr  < 24) return hr  + 'h';
+                const day = Math.floor(hr /24);                 return day + 'd';
             };
 
             const rows   = uniq.map(i => {
@@ -946,17 +973,14 @@
                       row.style.alignItems         = 'center';
                       row.style.padding            = '6px 4px';
                       row.style.borderBottom       = '1px solid #eee';
-
                 const time                         = new Date(item.ts).toLocaleString();
                 const left                         = document.createElement('div');
                       left.style.flex              = '1';
                       left.style.marginRight       = '8px';
                       left.innerHTML               = `<div style="font-size:11px;color:#333;margin-bottom:2px;">${item.vid} • ${time}</div><div style="font-size:11px;color:#0077cc;word-break:break-all"><a href="${item.url}" target="_blank">Открыть страницу с вопросами</a></div>`;
-
                 const actions                      = document.createElement('div');
                       actions.style.display        = 'flex';
                       actions.style.gap            = '6px';
-
                 const openBtn                      = document.createElement('button');
                       openBtn.textContent          = 'Open';
                       openBtn.style.padding        = '4px 6px';
@@ -964,7 +988,6 @@
                       openBtn.style.border         = '1px solid #ddd';
                       openBtn.style.cursor         = 'pointer';
                       openBtn.onclick              = () => window.open(item.url, '_blank');
-
                 const removeBtn                    = document.createElement('button');
                       removeBtn.textContent        = 'Remove';
                       removeBtn.style.padding      = '4px 6px';
@@ -992,7 +1015,8 @@
             { name : 'Верхняя кнопка отклика (vacancy page)', sel : SELECTORS.topApply },
             { name : 'Ссылка вакансии (card)',                sel : SELECTORS.vacancyLink },
             { name : 'modal submit',                          sel : SELECTORS.modalSubmit },
-            { name : 'modal textarea',                        sel : SELECTORS.modalTextarea }
+            { name : 'modal textarea',                        sel : SELECTORS.modalTextarea },
+            { name : 'resume dropdown',                       sel : SELECTORS.resumeDropdown }
         ];
         log('Запускаю HealthCheck...');
         checks.forEach(c => {
