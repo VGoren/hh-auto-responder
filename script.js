@@ -17,56 +17,56 @@
 
     const STORAGE_PREFIX = 'hh_ar_v2_';                                                                                         // Настройки хранилищ и ключи для local/session storage
     const KEYS           = {
-        settings         : STORAGE_PREFIX + 'cfg_data',
-        isRunning        : STORAGE_PREFIX + 'is_active',
-        returnUrl        : STORAGE_PREFIX + 'list_url',
-        history          : STORAGE_PREFIX + 'processed_ids',
-        needF5           : STORAGE_PREFIX + 'reload_flag',
-        trapLock         : STORAGE_PREFIX + 'ar_trap_lock',
-        instanceLock     : STORAGE_PREFIX + 'instance_lock',
-        lastAttempt      : STORAGE_PREFIX + 'last_attempt_id',
-        state            : STORAGE_PREFIX + 'state',
-        manualList       : STORAGE_PREFIX + 'manual_list'
-    };
-
-    const SELECTORS      = {                                                                                                    // Важные селекторы, используемые в скрипте
-        applyBtn         : '[data-qa="vacancy-serp__vacancy_response"], button[data-qa="vacancy-serp__vacancy_response"]',
-        topApply         : '[data-qa="vacancy-response-link-top"], a[data-qa="vacancy-response-link-top"]',
-        modalAddCover    : '[data-qa="add-cover-letter"]',
-        modalTextarea    : 'textarea[data-qa="vacancy-response-popup-form-letter-input"], textarea[name="coverLetter"]',
-        modalSubmit      : '[data-qa="vacancy-response-submit-popup"], button[data-qa="vacancy-response-submit-popup"]',
-        nativeWrapper    : '[data-qa="textarea-native-wrapper"]',
-        relocationBtn    : '[data-qa="relocation-warning-confirm"]',
-        vacancyLink      : 'a[data-qa="serp-item__title"], a[data-qa="vacancy-serp__vacancy-title"]',
-        vacancyCard      : 'div[data-qa="vacancy-serp__vacancy"], .vacancy-serp-item'
-    };
-
-    const DEFAULTS       = {                                                                                                    // Параметры по умолчанию
-        templates        : [
-            { name: 'Стандартный', text: 'Добрый день! Заинтересовала ваша вакансия. Опыт релевантен, подробности в резюме. Буду рад обратной связи!' },
-            { name: 'Краткий', text: 'Здравствуйте! Прошу рассмотреть мою кандидатуру. Спасибо!' },
-            { name: 'Опытный', text: 'Добрый день! Имею большой опыт в данной сфере. Мои навыки идеально подходят под ваши требования. Готов обсудить детали.' }
-        ],
-        selectedTemplate : 0,
-        coverText        : 'Добрый день! Заинтересовала ваша вакансия. Опыт релевантен, подробности в резюме. Буду рад обратной связи!',
-        useCover         : true,
-        delayMin         : 2000,
-        delayMax         : 5000,
-        limit            : 50,
-        skipHidden       : true,
-        viewMin          : 8000,
-        viewMax          : 25000,
-        scrollStepMs     : 200,
-        actionDelayMin   : 150,
-        actionDelayMax   : 700,
-        waitForModalMs   : 8000,
-        instanceLockTtl  : 30000
-    };
+                               settings         : STORAGE_PREFIX + 'cfg_data',
+                               isRunning        : STORAGE_PREFIX + 'is_active',
+                               returnUrl        : STORAGE_PREFIX + 'list_url',
+                               history          : STORAGE_PREFIX + 'processed_ids',
+                               needF5           : STORAGE_PREFIX + 'reload_flag',
+                               trapLock         : STORAGE_PREFIX + 'ar_trap_lock',
+                               instanceLock     : STORAGE_PREFIX + 'instance_lock',
+                               lastAttempt      : STORAGE_PREFIX + 'last_attempt_id',
+                               state            : STORAGE_PREFIX + 'state',
+                               manualList       : STORAGE_PREFIX + 'manual_list'
+                           },
+    SELECTORS            = {                                                                                                    // Важные селекторы, используемые в скрипте
+                               applyBtn         : '[data-qa="vacancy-serp__vacancy_response"], button[data-qa="vacancy-serp__vacancy_response"]',
+                               topApply         : '[data-qa="vacancy-response-link-top"], a[data-qa="vacancy-response-link-top"]',
+                               modalAddCover    : '[data-qa="add-cover-letter"]',
+                               modalTextarea    : 'textarea[data-qa="vacancy-response-popup-form-letter-input"], textarea[name="coverLetter"]',
+                               modalSubmit      : '[data-qa="vacancy-response-submit-popup"], button[data-qa="vacancy-response-submit-popup"]',
+                               nativeWrapper    : '[data-qa="textarea-native-wrapper"]',
+                               relocationBtn    : '[data-qa="relocation-warning-confirm"]',
+                               vacancyLink      : 'a[data-qa="serp-item__title"], a[data-qa="vacancy-serp__vacancy-title"]',
+                               vacancyCard      : 'div[data-qa="vacancy-serp__vacancy"], .vacancy-serp-item'
+                           },
+    DEFAULTS_FIXED       = {                                                                                                    // Параметры, которые каждый раз загружаются заново
+                              templates        : [
+                                                     { value: 'Добрый день! Заинтересовала ваша вакансия. Опыт релевантен, подробности в резюме. Буду рад обратной связи!' },
+                                                     { value: 'Здравствуйте! Прошу рассмотреть мою кандидатуру. Подробности в резюме.' },
+                                                     { value: 'Добрый день! Имею коммерческий опыт работы с вашим стеком технологий. Готов обсудить задачи.' }
+                                                     ,{ value: 'Добрый день! Имею коммерческий опыт вфывыфвф' }
+                                                 ]
+                           },
+    DEFAULTS             = {                                                                                                    // Параметры, которые загружатся лишь в первый раз, а дальше изменяются
+                               selectedTemplate : 0,
+                               useCover         : true,
+                               delayMin         : 2000,
+                               delayMax         : 5000,
+                               limit            : 50,
+                               skipHidden       : true,
+                               viewMin          : 8000,
+                               viewMax          : 25000,
+                               scrollStepMs     : 200,
+                               actionDelayMin   : 150,
+                               actionDelayMax   : 700,
+                               waitForModalMs   : 8000,
+                               instanceLockTtl  : 30000
+                           };
 
     const StateManager   = {                                                                                                    // Небольшой менеджер состояния — работа с local/session storage
         loadConfig       : ()       => {
-            try          { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEYS.settings) || '{}') }; }
-            catch        { return { ...DEFAULTS }; }
+            try          { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEYS.settings) || '{}'), ...DEFAULTS_FIXED }; }
+            catch        { return { ...DEFAULTS,                                                             ...DEFAULTS_FIXED }; }
         },
         saveConfig       : (s)      => localStorage.setItem(KEYS.settings, JSON.stringify(s)),
         getProcessedIDs  : ()       => {
@@ -504,13 +504,13 @@
                     await actionPause();
                     const area = await waitForElement(SELECTORS.modalTextarea, 2000);
                     if (area) {
-                        fillTextarea(area, config.coverText);
+                        fillTextarea(area, config.templates[config.selectedTemplate].value);
                         await actionPause();
                     }
                 } else {
                     const area = document.querySelector(SELECTORS.modalTextarea);
                     if (area) {
-                        fillTextarea(area, config.coverText);
+                        fillTextarea(area, config.templates[config.selectedTemplate].value);
                         await actionPause();
                     }
                 }
@@ -706,9 +706,10 @@
                 <label style="${styles.label}">
                     <input type="checkbox" id="ar-use-cover-check"> Сопроводительное письмо
                 </label>
-                <div style="${styles.labelSmall}">Выбор шаблона</div>
-                <select id="ar-template-select" style="${styles.input}; margin-bottom: 8px;"></select>
-                <textarea id="ar-cover-text" rows="4" style="${styles.textarea}"></textarea>
+                <div style="margin-bottom: 12px;">
+                    <div style="${styles.labelSmall}">Выберите шаблон</div>
+                    <select id="ar-template-select" style="${styles.textarea}; height: auto; padding: 6px;"></select>
+                </div>
         
                 <div style="${styles.row}">
                     <div style="flex: 1;">
@@ -769,39 +770,35 @@
         document.body.appendChild(panel);
 
         const el = (id) => document.getElementById(id);
-        
-        const templateSelect = el('ar-template-select');                                                                         // Заполнение выпадающего списка шаблонов
-        config.templates.forEach((t, i) => {
-            const opt       = document.createElement('option');
-            opt.value       = i;
-            opt.textContent = t.name;
-            templateSelect.appendChild(opt);
-        });
-        templateSelect.value = config.selectedTemplate;
 
-        el('ar-cover-text'     ).value   = config.coverText;
-        el('ar-use-cover-check').checked = config.useCover;
-        el('ar-min-delay'      ).value   = config.delayMin;
-        el('ar-max-delay'      ).value   = config.delayMax;
-        el('ar-limit-input'    ).value   = config.limit;
-        el('ar-view-min'       ).value   = config.viewMin;
-        el('ar-view-max'       ).value   = config.viewMax;
-        el('ar-action-min'     ).value   = config.actionDelayMin;
-        el('ar-action-max'     ).value   = config.actionDelayMax;
+        config.templates.forEach((template, i) => {
+            const opt             = document.createElement('option');
+                  opt.value       = i;
+                  opt.textContent = template.value.length > 80    ? template.value.slice(0, 80) + '...' : template.value;
+            el('ar-template-select').appendChild(opt);
+        });
+ 
+        // Групповое заполнение полей
+        el('ar-template-select').value    = config.selectedTemplate;
+        el('ar-use-cover-check').checked  = config.useCover;
+        el('ar-min-delay'      ).value    = config.delayMin;
+        el('ar-max-delay'      ).value    = config.delayMax;
+        el('ar-limit-input'    ).value    = config.limit;
+        el('ar-view-min'       ).value    = config.viewMin;
+        el('ar-view-max'       ).value    = config.viewMax;
+        el('ar-action-min'     ).value    = config.actionDelayMin;
+        el('ar-action-max'     ).value    = config.actionDelayMax;
 
         const saveSettings = () => {
-            config.coverText        = el('ar-cover-text').value;
-            config.selectedTemplate = +templateSelect.value;
-            config.templates[config.selectedTemplate].text = config.coverText;                                                  // Сохраняем текст в текущий выбранный шаблон
-
-            config.useCover       =  el('ar-use-cover-check').checked;
-            config.delayMin       = +el('ar-min-delay'      ).value || DEFAULTS.delayMin;
-            config.delayMax       = +el('ar-max-delay'      ).value || DEFAULTS.delayMax;
-            config.limit          = +el('ar-limit-input'    ).value || DEFAULTS.limit;
-            config.viewMin        = +el('ar-view-min'       ).value || DEFAULTS.viewMin;
-            config.viewMax        = +el('ar-view-max'       ).value || DEFAULTS.viewMax;
-            config.actionDelayMin = +el('ar-action-min'     ).value || DEFAULTS.actionDelayMin;
-            config.actionDelayMax = +el('ar-action-max'     ).value || DEFAULTS.actionDelayMax;
+            config.useCover         =  el('ar-use-cover-check').checked;
+            config.selectedTemplate = +el('ar-template-select').value    || DEFAULTS.selectedTemplate;
+            config.delayMin         = +el('ar-min-delay'      ).value    || DEFAULTS.delayMin;
+            config.delayMax         = +el('ar-max-delay'      ).value    || DEFAULTS.delayMax;
+            config.limit            = +el('ar-limit-input'    ).value    || DEFAULTS.limit;
+            config.viewMin          = +el('ar-view-min'       ).value    || DEFAULTS.viewMin;
+            config.viewMax          = +el('ar-view-max'       ).value    || DEFAULTS.viewMax;
+            config.actionDelayMin   = +el('ar-action-min'     ).value    || DEFAULTS.actionDelayMin;
+            config.actionDelayMax   = +el('ar-action-max'     ).value    || DEFAULTS.actionDelayMax;
             if (config.delayMin       > config.delayMax)       [config.delayMin,       config.delayMax]       = [config.delayMax,       config.delayMin];
             if (config.viewMin        > config.viewMax)        [config.viewMin,        config.viewMax]        = [config.viewMax,        config.viewMin];
             if (config.actionDelayMin > config.actionDelayMax) [config.actionDelayMin, config.actionDelayMax] = [config.actionDelayMax, config.actionDelayMin];
@@ -809,13 +806,7 @@
             log('Настройки сохранены.');
         };
 
-        templateSelect.addEventListener('change', () => {                                                                       // Логика переключения шаблона
-            const idx = +templateSelect.value;
-            el('ar-cover-text').value = config.templates[idx].text;
-            saveSettings();
-        });
-
-        ['ar-cover-text', 'ar-use-cover-check', 'ar-min-delay', 'ar-max-delay', 'ar-limit-input', 'ar-view-min', 'ar-view-max', 'ar-action-min', 'ar-action-max'].forEach(id => el(id).addEventListener('change', saveSettings));
+        ['ar-template-select', 'ar-use-cover-check', 'ar-min-delay', 'ar-max-delay', 'ar-limit-input', 'ar-view-min', 'ar-view-max', 'ar-action-min', 'ar-action-max'].forEach(id => el(id).addEventListener('change', saveSettings));
 
         el('ar-start-btn').onclick = startLoop;
         el('ar-stop-btn').onclick  = () => {
