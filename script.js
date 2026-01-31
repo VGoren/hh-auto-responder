@@ -40,7 +40,8 @@
                                vacancyLink      : 'a[data-qa="serp-item__title"], a[data-qa="vacancy-serp__vacancy-title"]',
                                vacancyCard      : 'div[data-qa="vacancy-serp__vacancy"], .vacancy-serp-item',
                                resumeDropdown   : '[data-qa="resume-title"]',
-                               resumeItemBase   : '[data-qa="magritte-select-option-{ID}"]'
+                               resumeItemBase   : '[data-qa="magritte-select-option-{ID}"]',
+                               letterToggle     : '[data-qa="vacancy-response-letter-toggle"]'
                            },
     DEFAULTS_FIXED       = {                                                                                                    // Параметры, которые каждый раз загружаются заново
                                templates        : [
@@ -303,8 +304,48 @@
         }
     }
 
+    async function fillResponsePageData() {                                                                                     // Выбор резюме и вставка письма на отдельной странице вопросов
+        try {
+            log('Заполнение данных на странице отклика (вопросы/тест)...');
+            await actionPause();
+
+            // --- ВЫБОР РЕЗЮМЕ ---
+            const resumeConfig = config.resumes[config.selectedResume];
+            if (resumeConfig && resumeConfig.value) {
+                const dropdown = document.querySelector(SELECTORS.resumeDropdown);
+                if (dropdown) {
+                    dropdown.click();
+                    await actionPause();
+                    const itemSel = SELECTORS.resumeItemBase.replace('{ID}', resumeConfig.value);
+                    const opt = await waitForElement(itemSel, 2000);
+                    if (opt) {
+                        opt.click();
+                        log('Резюме выбрано.');
+                        await actionPause();
+                    }
+                }
+            }
+            // --- СОПРОВОДИТЕЛЬНОЕ ПИСЬМО ---
+            if (config.useCover) {
+                const toggle = document.querySelector(SELECTORS.letterToggle);                                                  // Кликаем по переключателю перед вставкой письма
+                if (toggle) {
+                    toggle.click();
+                    await actionPause();
+                }
+                const area = await waitForElement(SELECTORS.modalTextarea, 2000);
+                if (area) {
+                    fillTextarea(area, config.templates[config.selectedTemplate].value);
+                    log('Сопроводительное письмо вставлено.');
+                    await actionPause();
+                }
+            }
+        } catch (e) {
+            console.warn('fillResponsePageData error', e);
+        }
+    }
+
     function watchTheURL() {                                                                                                    // Watchdog: если попали на страницу с вопросами — пытаемся безопасно вернуться и помечаем вакансию
-        setInterval(() => {
+        setInterval(async () => {
             StateManager.touchInstanceLock(TAB_ID);                                                                             // Обновляем timestamp instance lock
 
             if (!StateManager.amIRunning()) return;
@@ -313,6 +354,8 @@
                 if (!StateManager.hasTrapLock()) {
                     StateManager.setTrapLock();
                     log('Попали на вопросы/тест. Инициирую возврат (попытка history.go(-2)).', true);
+
+                    await fillResponsePageData();                                                                               // Сначала выбираем резюме и заполняем письмо на странице
 
                     let vid  = null;                                                                                            // Старательно пытаемся найти ID вакансии, чтобы пометить её как обработанную
                     try {
@@ -600,6 +643,12 @@
             isLoopActive = false;
             StateManager.setRunning(false);
             if(statusEl) statusEl.textContent = 'Лимит достигнут';
+            return;
+        }
+
+        if (location.pathname.startsWith('/applicant/vacancy_response')) {                                                      // Если запущены прямо на странице вопросов
+            await fillResponsePageData();
+            isLoopActive = false;
             return;
         }
 
@@ -1027,7 +1076,8 @@
             { name : 'Ссылка вакансии (card)',                sel : SELECTORS.vacancyLink },
             { name : 'modal submit',                          sel : SELECTORS.modalSubmit },
             { name : 'modal textarea',                        sel : SELECTORS.modalTextarea },
-            { name : 'resume dropdown',                       sel : SELECTORS.resumeDropdown }
+            { name : 'resume dropdown',                       sel : SELECTORS.resumeDropdown },
+            { name : 'letter toggle (questions)',             sel : SELECTORS.letterToggle }
         ];
         log('Запускаю HealthCheck...');
         checks.forEach(c => {
