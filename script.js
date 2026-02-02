@@ -25,6 +25,8 @@
                                trapLock         : STORAGE_PREFIX + 'ar_trap_lock',
                                instanceLock     : STORAGE_PREFIX + 'instance_lock',
                                lastAttempt      : STORAGE_PREFIX + 'last_attempt_id',
+                               lastTitle        : STORAGE_PREFIX + 'last_title',                                                // Название текущей вакансии
+                               lastFio          : STORAGE_PREFIX + 'last_fio',                                                  // ФИО контактного лица
                                state            : STORAGE_PREFIX + 'state',
                                manualList       : STORAGE_PREFIX + 'manual_list',
                                sessionCount     : STORAGE_PREFIX + 'session_count'
@@ -32,7 +34,7 @@
     SELECTORS            = {                                                                                                    // Важные селекторы, используемые в скрипте
                                applyBtn         : '[data-qa="vacancy-serp__vacancy_response"], button[data-qa="vacancy-serp__vacancy_response"]',
                                topApply         : '[data-qa="vacancy-response-link-top"], a[data-qa="vacancy-response-link-top"]',
-                               modalAddCover    : '[data-qa="add-cover-letter"]',
+                               coverToggle      : '[data-qa="add-cover-letter"], [data-qa="vacancy-response-letter-toggle"]',        // Объединенный селектор для модалки и страницы вопросов
                                modalTextarea    : 'textarea[data-qa="vacancy-response-popup-form-letter-input"], textarea[name="coverLetter"]',
                                modalSubmit      : '[data-qa="vacancy-response-submit-popup"], button[data-qa="vacancy-response-submit-popup"]',
                                nativeWrapper    : '[data-qa="textarea-native-wrapper"]',
@@ -41,7 +43,9 @@
                                vacancyCard      : 'div[data-qa="vacancy-serp__vacancy"], .vacancy-serp-item',
                                resumeDropdown   : '[data-qa="resume-title"]',
                                resumeItemBase   : '[data-qa="magritte-select-option-{ID}"]',
-                               letterToggle     : '[data-qa="vacancy-response-letter-toggle"]'
+                               vacancyTitle     : '[data-qa="vacancy-title"]',                                                  // Селектор названия вакансии
+                               contactsBtn      : '[data-qa="show-employer-contacts show-employer-contacts_top-button"]',        // Кнопка "Показать контакты"
+                               contactsFio      : '[data-qa="vacancy-contacts__fio"]'                                           // ФИО в блоке контактов
                            },
     DEFAULTS_FIXED       = {                                                                                                    // Параметры, которые каждый раз загружаются заново
                                templates        : [
@@ -121,6 +125,10 @@
                                         },
         getLastAttemptID   : ()      => sessionStorage.getItem(KEYS.lastAttempt),
         clearLastAttemptID : ()      => sessionStorage.removeItem(KEYS.lastAttempt),
+        clearLastVacancyData: ()     => {                                                                                              // Очистка данных о текущей вакансии перед новым циклом
+                                           sessionStorage.removeItem(KEYS.lastTitle);
+                                           sessionStorage.removeItem(KEYS.lastFio);
+                                        },
         acquireInstanceLock: (tabId) => {                                                                                        // Простая кросс-вкладочная блокировка (instance lock)
                                            try {
                                                const now = Date.now();
@@ -202,7 +210,7 @@
                                }
                                console.log(`[HH-AR] ${msg}`);
                            };
-                           
+
     function fillTextarea(el, value) {                                                                                          // Корректная вставка текста в textarea (учитывает React/Magritte)
         try {
             const descriptor = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value');
@@ -304,44 +312,54 @@
         }
     }
 
-    async function fillResponsePageData() {                                                                                     // Выбор резюме и вставка письма на отдельной странице вопросов
+    async function performResumeSelection() {                                                                                  // Универсальная логика выбора резюме
         try {
-            log('Заполнение данных на странице отклика (вопросы/тест)...');
-            await actionPause();
-
-            // --- ВЫБОР РЕЗЮМЕ ---
             const resumeConfig = config.resumes[config.selectedResume];
-            if (resumeConfig && resumeConfig.value) {
-                const dropdown = document.querySelector(SELECTORS.resumeDropdown);
-                if (dropdown) {
-                    dropdown.click();
-                    await actionPause();
-                    const itemSel = SELECTORS.resumeItemBase.replace('{ID}', resumeConfig.value);
-                    const opt = await waitForElement(itemSel, 2000);
-                    if (opt) {
-                        opt.click();
-                        log('Резюме выбрано.');
-                        await actionPause();
-                    }
-                }
-            }
-            // --- СОПРОВОДИТЕЛЬНОЕ ПИСЬМО ---
-            if (config.useCover) {
-                const toggle = document.querySelector(SELECTORS.letterToggle);                                                  // Кликаем по переключателю перед вставкой письма
-                if (toggle) {
-                    toggle.click();
-                    await actionPause();
-                }
-                const area = await waitForElement(SELECTORS.modalTextarea, 2000);
-                if (area) {
-                    fillTextarea(area, config.templates[config.selectedTemplate].value);
-                    log('Сопроводительное письмо вставлено.');
+            if (!resumeConfig || !resumeConfig.value) return;
+
+            const dropdown = document.querySelector(SELECTORS.resumeDropdown);
+            if (dropdown) {
+                dropdown.click();
+                await actionPause();
+                const itemSel = SELECTORS.resumeItemBase.replace('{ID}', resumeConfig.value);
+                const opt = await waitForElement(itemSel, 2000);
+                if (opt) {
+                    opt.click();
+                    log('Резюме выбрано.');
                     await actionPause();
                 }
             }
         } catch (e) {
-            console.warn('fillResponsePageData error', e);
+            console.warn('performResumeSelection error', e);
         }
+    }
+
+    async function performCoverLetterInsertion() {                                                                              // Универсальная логика вставки сопроводительного письма
+        try {
+            if (!config.useCover) return;
+
+            const toggle = document.querySelector(SELECTORS.coverToggle);                                                       // Ищем кнопку добавления письма или переключатель
+            if (toggle) {
+                toggle.click();
+                await actionPause();
+            }
+
+            const area = await waitForElement(SELECTORS.modalTextarea, 2000);
+            if (area) {
+                fillTextarea(area, config.templates[config.selectedTemplate].value);
+                log('Сопроводительное письмо вставлено.');
+                await actionPause();
+            }
+        } catch (e) {
+            console.warn('performCoverLetterInsertion error', e);
+        }
+    }
+
+    async function fillResponsePageData() {                                                                                     // Наполнение страницы с вопросами данными
+        log('Заполнение данных...');
+        await actionPause();
+        await performResumeSelection();
+        await performCoverLetterInsertion();
     }
 
     function watchTheURL() {                                                                                                    // Watchdog: если попали на страницу с вопросами — пытаемся безопасно вернуться и помечаем вакансию
@@ -489,8 +507,32 @@
             const vid    = getVacancyID(btn || document);
             StateManager.setReturnUrl(document.referrer || '/search/vacancy');
 
+            StateManager.clearLastVacancyData();                                                                                // Обязательная очистка переменных перед извлечением новых данных
+            
             const viewTime = randomDelay(config.viewMin, config.viewMax);
             log(`Читаю ~${Math.round(viewTime/1000)} сек (имитирую просмотр страницы).`);
+
+            try {                                                                                                               // Сбор мета-информации о вакансии
+                const titleEl = document.querySelector(SELECTORS.vacancyTitle);
+                if (titleEl) {
+                    const title = titleEl.innerText.trim();
+                    sessionStorage.setItem(KEYS.lastTitle, title);
+                    log(`Название: ${title}`);
+                }
+
+                const cBtn = document.querySelector(SELECTORS.contactsBtn);                                                     // Контакты извлекаются только если есть кнопка
+                if (cBtn) {
+                    cBtn.click();
+                    await wait(800);                                                                                            // Пауза для отрисовки ФИО после клика
+                    const fioEl = document.querySelector(SELECTORS.contactsFio);
+                    if (fioEl) {
+                        const fio = fioEl.innerText.trim();
+                        sessionStorage.setItem(KEYS.lastFio, fio);
+                        log(`Контакт: ${fio}`);
+                    }
+                }
+            } catch (e) { /* ignore data errors */ }
+
             await humanScrollToCompanySectionAndReturn(viewTime);
 
             await actionPause();
@@ -557,41 +599,7 @@
                 return 'ERROR_NO_MODAL';
             }
 
-            // --- ВЫБОР РЕЗЮМЕ ---
-            const resumeConfig = config.resumes[config.selectedResume];
-            if (resumeConfig && resumeConfig.value) {
-                if (document.querySelector(SELECTORS.resumeDropdown)) {
-                    document.querySelector(SELECTORS.resumeDropdown).click();
-                    await actionPause();
-                    const itemSel = SELECTORS.resumeItemBase.replace('{ID}', resumeConfig.value);
-                    const opt = await waitForElement(itemSel, 2000);
-                    if (opt) {
-                        opt.click();
-                        await actionPause();
-                    }
-                }
-            }
-
-            if (config.useCover) {
-                await actionPause();
-                const addCoverBtn = document.querySelector(SELECTORS.modalAddCover);
-                if (addCoverBtn) {
-                    addCoverBtn.click();
-                    await actionPause();
-                    const area = await waitForElement(SELECTORS.modalTextarea, 2000);
-                    if (area) {
-                        fillTextarea(area, config.templates[config.selectedTemplate].value);
-                        await actionPause();
-                    }
-                } else {
-                    const area = document.querySelector(SELECTORS.modalTextarea);
-                    if (area) {
-                        fillTextarea(area, config.templates[config.selectedTemplate].value);
-                        await actionPause();
-                    }
-                }
-                await wait(randomDelay(500, 1000));
-            }
+            await fillResponsePageData();
 
             submitButton = submitButton || await waitForElement(SELECTORS.modalSubmit, 2000);
             if (submitButton && !submitButton.disabled) {
@@ -1077,7 +1085,7 @@
             { name : 'modal submit',                          sel : SELECTORS.modalSubmit },
             { name : 'modal textarea',                        sel : SELECTORS.modalTextarea },
             { name : 'resume dropdown',                       sel : SELECTORS.resumeDropdown },
-            { name : 'letter toggle (questions)',             sel : SELECTORS.letterToggle }
+            { name : 'cover toggle (unified)',                sel : SELECTORS.coverToggle }
         ];
         log('Запускаю HealthCheck...');
         checks.forEach(c => {
