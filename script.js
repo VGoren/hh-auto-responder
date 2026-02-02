@@ -741,51 +741,51 @@
     function setupUI() {                                                                                                        // UI — панель с настройками и логом
         if (document.getElementById('ar-main-panel')) return;
 
-    const styles = {
-        toggleBtn         : "position: fixed; top: 50%; right: 20px; transform: translateY(-50%); width: 48px; height: 48px; background: #222; color: #fff; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 2px solid #fff; user-select: none; transition: all 0.2s;",
-        panel             : "position: fixed; bottom: 20px; right: 20px; width: 600px; background: #fff; border: 1px solid #e0e0e0; box-shadow: 0 4px 20px rgba(0,0,0,0.2); border-radius: 12px; z-index: 99999; font-family: sans-serif; font-size: 13px; color: #333; overflow: hidden; display: block;",
-        header            : "padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f9f9f9;",
-        headerActions     : "display: flex; gap: 8px; align-items: center;",
-        status            : "font-weight: bold; color: #666; font-size: 11px;",
-        btnMinimize       : "background: none; border: none; cursor: pointer; font-size: 16px; color: #888;",
-        container         : "padding: 12px;",
-        label             : "display: block; margin-bottom: 8px; cursor: pointer;",
-        selectGroup       : "display: flex; gap: 10px;",
-        selectCol         : "flex: 1; margin-bottom: 12px;",
-        labelSmall        : "font-size: 10px; color: #888; margin-bottom: 2px;",
-        textarea          : "width: 100%; box-sizing: border-box; border: 1px solid #ddd; padding: 8px; border-radius: 6px; resize: vertical; margin-bottom: 12px; font-family: inherit;",
-        row               : "display: flex; gap: 10px; margin-bottom: 12px;",
-        inputGroup        : "display: flex; align-items: center; gap: 4px;",
-        input             : "width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;",
-        separator         : "color: #888;",
-        actionRow         : "display: flex; gap: 8px; margin-bottom: 8px;",
-        btnStart          : "flex: 1; padding: 8px; background: #22c55e; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;",
-        btnStop           : "flex: 1; padding: 8px; background: #ef4444; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;",
-        utilityRow        : "display: flex; gap: 8px; margin-bottom: 10px;",
-        btnSecondary      : "flex: 1; padding: 6px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer;",
-        footer            : "padding: 12px; border-top: 1px solid #eee;",
-        footerTitle       : "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;",
-        footerActionGroup : "display: flex; gap: 6px;",
-        manualList        : "max-height: 120px; overflow: auto; font-size: 12px; border: 1px solid #f0f0f0; padding: 6px; border-radius: 6px; background: #fafafa;",
-        emptyMsg          : "color: #666;",
-        manualRow         : "display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; border-bottom: 1px solid #eee;",
-        manualLeft        : "flex: 1; margin-right: 8px;",
-        manualIdText      : "font-size: 11px; color: #333; margin-bottom: 2px;",
-        manualLinkBox     : "font-size: 11px; color: #0077cc; word-break: break-all;",
-        manualActions     : "display: flex; gap: 6px;",
-        manualBtn         : "padding: 4px 6px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer;",
-        logBox            : "height: 140px; overflow-y: auto; background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 11px; padding: 8px; border-top: 1px solid #333;",
-        // Export HTML attributes
-        exportHtmlBody    : "font-family:Arial,Helvetica,sans-serif;padding:18px;color:#111;background:#fff",
-        exportHtmlH2      : "margin:0 0 8px;font-size:18px",
-        exportHtmlMeta    : "color:#6b7280;font-size:13px;margin-top:6px",
-        exportHtmlTable   : "border-collapse:collapse;width:100%;margin-top:12px",
-        exportHtmlTh      : "background:#f7fafc;color:#334155;padding:10px;border:1px solid #eef2f7;text-align:left",
-        exportHtmlTd      : "padding:8px;border:1px solid #eef2f7",
-        exportHtmlTdNowrap: "padding:8px;border:1px solid #eef2f7;white-space:nowrap;",
-        exportHtmlAgo     : "color:#7b8794;font-size:11px",
-        exportHtmlLink    : "color:#0b6ef6;text-decoration:none;word-break:break-all"
-    };
+        const styles = {
+            toggleBtn         : "display: none; align-items: center; justify-content: center; position: fixed; top: 50%; right: 20px; transform: translateY(-50%); width: 48px; height: 48px; background: #222; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); color: #fff; font-size: 24px; cursor: pointer; user-select: none; transition: all 0.2s; z-index: 99999;",
+            panel             : "display: block; position: fixed; bottom: 20px; right: 20px; width: 600px; background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); color: #333; font-family: sans-serif; font-size: 13px; overflow: hidden; z-index: 99999;",
+            header            : "display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; border-bottom: 1px solid #eee;",
+            headerActions     : "display: flex; align-items: center; gap: 8px;",
+            status            : "color: #666; font-size: 11px; font-weight: bold;",
+            btnMinimize       : "background: none; border: none; color: #888; font-size: 16px; cursor: pointer;",
+            container         : "padding: 12px;",
+            label             : "display: block; margin-bottom: 8px; cursor: pointer;",
+            selectGroup       : "display: flex; gap: 10px;",
+            selectCol         : "flex: 1; margin-bottom: 12px;",
+            labelSmall        : "margin-bottom: 2px; color: #888; font-size: 10px;",
+            textarea          : "width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-family: inherit; margin-bottom: 12px; resize: vertical;",
+            row               : "display: flex; gap: 10px; margin-bottom: 12px;",
+            inputGroup        : "display: flex; align-items: center; gap: 4px;",
+            input             : "width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;",
+            separator         : "color: #888;",
+            actionRow         : "display: flex; gap: 8px; margin-bottom: 8px;",
+            btnStart          : "flex: 1; padding: 8px; background: #22c55e; border: none; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer; transition: opacity 0.2s;",
+            btnStop           : "flex: 1; padding: 8px; background: #ef4444; border: none; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer; transition: opacity 0.2s;",
+            utilityRow        : "display: flex; gap: 8px; margin-bottom: 10px;",
+            btnSecondary      : "flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer;",
+            footer            : "padding: 12px; border-top: 1px solid #eee;",
+            footerTitle       : "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;",
+            footerActionGroup : "display: flex; gap: 6px;",
+            manualList        : "max-height: 120px; padding: 6px; background: #fafafa; border: 1px solid #f0f0f0; border-radius: 6px; font-size: 12px; overflow: auto;",
+            emptyMsg          : "color: #666;",
+            manualRow         : "display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; border-bottom: 1px solid #eee;",
+            manualLeft        : "flex: 1; margin-right: 8px;",
+            manualIdText      : "margin-bottom: 2px; color: #333; font-size: 11px;",
+            manualLinkBox     : "color: #0077cc; font-size: 11px; word-break: break-all;",
+            manualActions     : "display: flex; gap: 6px;",
+            manualBtn         : "padding: 4px 6px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer;",
+            logBox            : "height: 140px; padding: 8px; background: #1e1e1e; border-top: 1px solid #333; color: #00ff00; font-family: monospace; font-size: 11px; overflow-y: auto;",
+            exportHtmlBody    : "padding: 18px; background: #fff; color: #111; font-family: Arial, Helvetica, sans-serif;",
+            exportHtmlH2      : "margin: 0 0 8px; font-size: 18px;",
+            exportHtmlMeta    : "margin-top: 6px; color: #6b7280; font-size: 13px;",
+            exportHtmlTable   : "width: 100%; margin-top: 12px; border-collapse: collapse;",
+            exportHtmlTh      : "padding: 10px; background: #f7fafc; border: 1px solid #eef2f7; color: #334155; text-align: left;",
+            exportHtmlTd      : "padding: 8px; border: 1px solid #eef2f7;",
+            exportHtmlTdNowrap: "padding: 8px; border: 1px solid #eef2f7; white-space: nowrap;",
+            exportHtmlAgo     : "color: #7b8794; font-size: 11px;",
+            exportHtmlLink    : "color: #0b6ef6; text-decoration: none; word-break: break-all;"
+        };
+
 
         const toggleBtn  = document.createElement('div');
         toggleBtn.id            = 'ar-toggle-btn';
@@ -890,16 +890,16 @@
         });
  
         // Групповое заполнение полей
-        el('ar-template-select').value    = config.selectedTemplate;
-        el('ar-resume-select'  ).value    = config.selectedResume;
-        el('ar-use-cover-check').checked  = config.useCover;
-        el('ar-min-delay'      ).value    = config.delayMin;
-        el('ar-max-delay'      ).value    = config.delayMax;
-        el('ar-limit-input'    ).value    = config.limit;
-        el('ar-view-min'       ).value    = config.viewMin;
-        el('ar-view-max'       ).value    = config.viewMax;
-        el('ar-action-min'     ).value    = config.actionDelayMin;
-        el('ar-action-max'     ).value    = config.actionDelayMax;
+        el('ar-template-select').value   = config.selectedTemplate;
+        el('ar-resume-select'  ).value   = config.selectedResume;
+        el('ar-use-cover-check').checked = config.useCover;
+        el('ar-min-delay'      ).value   = config.delayMin;
+        el('ar-max-delay'      ).value   = config.delayMax;
+        el('ar-limit-input'    ).value   = config.limit;
+        el('ar-view-min'       ).value   = config.viewMin;
+        el('ar-view-max'       ).value   = config.viewMax;
+        el('ar-action-min'     ).value   = config.actionDelayMin;
+        el('ar-action-max'     ).value   = config.actionDelayMax;
 
         const saveSettings = () => {
             config.useCover         =  el('ar-use-cover-check').checked;
@@ -983,30 +983,31 @@
                 </tr>`;
             }).join('');
 
-            const content = `<!doctype html>
-                             <html>
-                             <head>
-                                 <meta charset="utf-8">
-                                 <title>HH Manual List</title>
-                                 <meta name="viewport" content="width=device-width,initial-scale=1">
-                             </head>
-                             <body style="${styles.exportHtmlBody}">
-                                 <h2 style="${styles.exportHtmlH2}">Saved vacancies for manual responses</h2>
-                                 <div style="${styles.exportHtmlMeta}">Export date: ${new Date().toLocaleString()} — ${uniq.length} item(s)</div>
-                                 <table style="${styles.exportHtmlTable}">
-                                     <thead>
-                                         <tr>
-                                             <th style="${styles.exportHtmlTh}">saved</th>
-                                             <th style="${styles.exportHtmlTh}">vid</th>
-                                             <th style="${styles.exportHtmlTh}">link</th>
-                                         </tr>
-                                     </thead>
-                                     <tbody>
-                                         ${rows}
-                                     </tbody>
-                                 </table>
-                             </body>
-                             </html>`.trim();
+            const content = `
+                            <!doctype html>
+                            <html>
+                            <head>
+                                <meta charset="utf-8">
+                                <title>HH Manual List</title>
+                                <meta name="viewport" content="width=device-width,initial-scale=1">
+                            </head>
+                            <body style="${styles.exportHtmlBody}">
+                                <h2 style="${styles.exportHtmlH2}">Saved vacancies for manual responses</h2>
+                                <div style="${styles.exportHtmlMeta}">Export date: ${new Date().toLocaleString()} — ${uniq.length} item(s)</div>
+                                <table style="${styles.exportHtmlTable}">
+                                    <thead>
+                                        <tr>
+                                            <th style="${styles.exportHtmlTh}">saved</th>
+                                            <th style="${styles.exportHtmlTh}">vid</th>
+                                            <th style="${styles.exportHtmlTh}">link</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${rows}
+                                    </tbody>
+                                </table>
+                            </body>
+                            </html>`.trim();
             const blob    = new Blob([content], { type : 'text/html;charset=utf-8' });
             const urlBlob = URL.createObjectURL(blob);
             const a       = document.createElement('a'); a.href = urlBlob; a.download = 'hh_manual_list.html';
