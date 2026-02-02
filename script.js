@@ -49,10 +49,10 @@
                            },
     DEFAULTS_FIXED       = {                                                                                                    // Параметры, которые каждый раз загружаются заново
                                templates        : [
-                                                     { value: 'Добрый день! Заинтересовала ваша вакансия. Опыт релевантен, подробности в резюме. Буду рад обратной связи!' },
-                                                     { value: 'Здравствуйте! Прошу рассмотреть мою кандидатуру. Подробности в резюме.' },
-                                                     { value: 'Добрый день! Имею коммерческий опыт работы с вашим стеком технологий. Готов обсудить задачи.' }
-                                                     ,{ value: 'Добрый день! Имею коммерческий опыт вфывыфвф' }
+                                                     { value: 'Добрый день{lastRecruiterName}! Ознакомился с вакансией{lastTitle}. Мой опыт релевантен вашим задачам, буду рад обсудить подробности на интервью.' },
+                                                     { value: 'Здравствуйте! Заинтересовала вакансия {lastTitle}. Имею коммерческий опыт работы с вашим стеком технологий. Подробности в резюме.' },
+                                                     { value: 'Добрый день! Прошу рассмотреть мою кандидатуру на позицию{lastTitle}. Буду рад обратной связи!' },
+                                                     { value: 'Добрый день! Имею коммерческий опыт вфывыфвф' }
                                                   ],
                                resumes          : [
                                                      { name: 'Не выбирать (текущее)', value: '' },
@@ -346,7 +346,18 @@
 
             const area = await waitForElement(SELECTORS.modalTextarea, 2000);
             if (area) {
-                fillTextarea(area, config.templates[config.selectedTemplate].value);
+                let   text              = config.templates[config.selectedTemplate].value;
+                const lastTitle         = sessionStorage.getItem(KEYS.lastTitle) || '';
+                const lastFio           = sessionStorage.getItem(KEYS.lastFio)   || '';
+                
+                const fioParts          = lastFio.trim().split(/\s+/);                                                          // Извлекаем имя (второе слово) для обращения
+                const lastRecruiterName = fioParts.length >= 2 ? fioParts[1] : fioParts[0];
+
+                text = text.replace(/{lastTitle}/g,         lastTitle         ? " "  + lastTitle         : "")  // Групповая замена плейсхолдеров
+                           .replace(/{lastRecruiterName}/g, lastRecruiterName ? ", " + lastRecruiterName : "")
+                           .replace(/{lastFio}/g,           lastFio           ? ", " + lastFio           : "");
+
+                fillTextarea(area, text);
                 log('Сопроводительное письмо вставлено.');
                 await actionPause();
             }
@@ -730,76 +741,41 @@
     function setupUI() {                                                                                                        // UI — панель с настройками и логом
         if (document.getElementById('ar-main-panel')) return;
 
-        const styles = {
-            toggleBtn           : `
-                                  position       : fixed; 
-                                  top            : 50%; 
-                                  right          : 20px; 
-                                  transform      : translateY(-50%);
-                                  width          : 48px; 
-                                  height         : 48px;
-                                  background     : #222; 
-                                  color          : #fff; 
-                                  border-radius  : 50%; 
-                                  display        : none;
-                                  align-items    : center; 
-                                  justify-content: center; 
-                                  font-size      : 24px; 
-                                  cursor         : pointer;
-                                  z-index        : 99999; 
-                                  box-shadow     : 0 4px 12px rgba(0,0,0,0.3); 
-                                  border         : 2px solid #fff;
-                                  user-select    : none; 
-                                  transition     : all 0.2s;
-                                  `,
-            panel               : `
-                                  position       : fixed;
-                                  bottom         : 20px;
-                                  right          : 20px;
-                                  width          : 600px;
-                                  background     : #fff;
-                                  border         : 1px solid #e0e0e0;
-                                  box-shadow     : 0 4px 20px rgba(0,0,0,0.2);
-                                  border-radius  : 12px;
-                                  z-index        : 99999;
-                                  font-family    : sans-serif;
-                                  font-size      : 13px;
-                                  color          : #333;
-                                  overflow       : hidden;
-                                  display        : block;
-                                  `,
-            header              : "padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f9f9f9;",
-            headerActions       : "display: flex; gap: 8px; align-items: center;",
-            status              : "font-weight: bold; color: #666; font-size: 11px;",
-            btnMinimize         : "background:none; border:none; cursor:pointer; font-size: 16px; color:#888;",
-            container           : "padding: 12px;",
-            label               : "display:block; margin-bottom: 8px; cursor: pointer;",
-            selectGroup         : "display: flex; gap: 10px;",
-            selectCol           : "flex: 1; margin-bottom: 12px;",
-            labelSmall          : "font-size: 10px; color: #888; margin-bottom: 2px;",
-            textarea            : "width: 100%; box-sizing: border-box; border: 1px solid #ddd; padding: 8px; border-radius: 6px; resize: vertical; margin-bottom: 12px; font-family: inherit;",
-            row                 : "display: flex; gap: 10px; margin-bottom: 12px;",
-            inputGroup          : "display: flex; align-items: center; gap: 4px;",
-            input               : "width: 100%; padding: 4px; border:1px solid #ddd; border-radius: 4px;",
-            separator           : "color: #888;",
-            actionRow           : "display: flex; gap: 8px; margin-bottom: 8px;",
-            btnStart            : "flex: 1; padding: 8px; background: #22c55e; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;",
-            btnStop             : "flex: 1; padding: 8px; background: #ef4444; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;",
-            utilityRow          : "display: flex; gap: 8px; margin-bottom: 10px;",
-            btnSecondary        : "flex:1; padding:6px; border-radius:6px; border:1px solid #ddd; cursor:pointer;",
-            footer              : "padding: 12px; border-top: 1px solid #eee;",
-            footerTitle         : "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;",
-            footerActionGroup   : "display: flex; gap: 6px;",
-            manualList          : "max-height:120px; overflow:auto; font-size:12px; border:1px solid #f0f0f0; padding:6px; border-radius:6px; background:#fafafa",
-            emptyMsg            : "color: #666;",
-            manualRow           : "display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; border-bottom: 1px solid #eee;",
-            manualLeft          : "flex: 1; margin-right: 8px;",
-            manualIdText        : "font-size: 11px; color: #333; margin-bottom: 2px;",
-            manualLinkBox       : "font-size: 11px; color: #0077cc; word-break: break-all;",
-            manualActions       : "display: flex; gap: 6px;",
-            manualBtn           : "padding: 4px 6px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer;",
-            logBox              : "height: 140px; overflow-y: auto; background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 11px; padding: 8px; border-top: 1px solid #333;"
-        };
+    const styles = {
+        toggleBtn         : "position: fixed; top: 50%; right: 20px; transform: translateY(-50%); width: 48px; height: 48px; background: #222; color: #fff; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; z-index: 99999; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 2px solid #fff; user-select: none; transition: all 0.2s;",
+        panel             : "position: fixed; bottom: 20px; right: 20px; width: 600px; background: #fff; border: 1px solid #e0e0e0; box-shadow: 0 4px 20px rgba(0,0,0,0.2); border-radius: 12px; z-index: 99999; font-family: sans-serif; font-size: 13px; color: #333; overflow: hidden; display: block;",
+        header            : "padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #f9f9f9;",
+        headerActions     : "display: flex; gap: 8px; align-items: center;",
+        status            : "font-weight: bold; color: #666; font-size: 11px;",
+        btnMinimize       : "background: none; border: none; cursor: pointer; font-size: 16px; color: #888;",
+        container         : "padding: 12px;",
+        label             : "display: block; margin-bottom: 8px; cursor: pointer;",
+        selectGroup       : "display: flex; gap: 10px;",
+        selectCol         : "flex: 1; margin-bottom: 12px;",
+        labelSmall        : "font-size: 10px; color: #888; margin-bottom: 2px;",
+        textarea          : "width: 100%; box-sizing: border-box; border: 1px solid #ddd; padding: 8px; border-radius: 6px; resize: vertical; margin-bottom: 12px; font-family: inherit;",
+        row               : "display: flex; gap: 10px; margin-bottom: 12px;",
+        inputGroup        : "display: flex; align-items: center; gap: 4px;",
+        input             : "width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;",
+        separator         : "color: #888;",
+        actionRow         : "display: flex; gap: 8px; margin-bottom: 8px;",
+        btnStart          : "flex: 1; padding: 8px; background: #22c55e; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;",
+        btnStop           : "flex: 1; padding: 8px; background: #ef4444; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;",
+        utilityRow        : "display: flex; gap: 8px; margin-bottom: 10px;",
+        btnSecondary      : "flex: 1; padding: 6px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer;",
+        footer            : "padding: 12px; border-top: 1px solid #eee;",
+        footerTitle       : "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;",
+        footerActionGroup : "display: flex; gap: 6px;",
+        manualList        : "max-height: 120px; overflow: auto; font-size: 12px; border: 1px solid #f0f0f0; padding: 6px; border-radius: 6px; background: #fafafa;",
+        emptyMsg          : "color: #666;",
+        manualRow         : "display: flex; justify-content: space-between; align-items: center; padding: 6px 4px; border-bottom: 1px solid #eee;",
+        manualLeft        : "flex: 1; margin-right: 8px;",
+        manualIdText      : "font-size: 11px; color: #333; margin-bottom: 2px;",
+        manualLinkBox     : "font-size: 11px; color: #0077cc; word-break: break-all;",
+        manualActions     : "display: flex; gap: 6px;",
+        manualBtn         : "padding: 4px 6px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer;",
+        logBox            : "height: 140px; overflow-y: auto; background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 11px; padding: 8px; border-top: 1px solid #333;"
+    };
 
         const toggleBtn  = document.createElement('div');
         toggleBtn.id            = 'ar-toggle-btn';
@@ -832,7 +808,6 @@
                         <select id="ar-template-select" style="${styles.textarea}; height: auto; padding: 6px;"></select>
                     </div>
                 </div>
-        
                 <div style="${styles.row}">
                     <div style="flex: 1;">
                         <div style="${styles.labelSmall}">Задержка между действиями (мс)</div>
@@ -847,7 +822,6 @@
                         <input type="number" id="ar-limit-input" style="${styles.input}">
                     </div>
                 </div>
-        
                 <div style="${styles.row}">
                     <div style="flex:1;">
                         <div style="${styles.labelSmall}">Время чтения вакансии (мс)</div>
@@ -857,7 +831,6 @@
                         </div>
                     </div>
                 </div>
-        
                 <div style="${styles.row}">
                     <div style="flex:1;">
                         <div style="${styles.labelSmall}">Задержки действий (мс)</div>
@@ -867,7 +840,6 @@
                         </div>
                     </div>
                 </div>
-        
                 <div style="${styles.actionRow}">
                     <button id="ar-start-btn" style="${styles.btnStart}">START</button>
                     <button id="ar-stop-btn"  style="${styles.btnStop}">STOP</button>
@@ -909,7 +881,7 @@
  
         // Групповое заполнение полей
         el('ar-template-select').value    = config.selectedTemplate;
-        el('ar-resume-select').value      = config.selectedResume;
+        el('ar-resume-select'  ).value    = config.selectedResume;
         el('ar-use-cover-check').checked  = config.useCover;
         el('ar-min-delay'      ).value    = config.delayMin;
         el('ar-max-delay'      ).value    = config.delayMax;
