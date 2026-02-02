@@ -774,7 +774,17 @@
         manualLinkBox     : "font-size: 11px; color: #0077cc; word-break: break-all;",
         manualActions     : "display: flex; gap: 6px;",
         manualBtn         : "padding: 4px 6px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer;",
-        logBox            : "height: 140px; overflow-y: auto; background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 11px; padding: 8px; border-top: 1px solid #333;"
+        logBox            : "height: 140px; overflow-y: auto; background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 11px; padding: 8px; border-top: 1px solid #333;",
+        // Export HTML attributes
+        exportHtmlBody    : "font-family:Arial,Helvetica,sans-serif;padding:18px;color:#111;background:#fff",
+        exportHtmlH2      : "margin:0 0 8px;font-size:18px",
+        exportHtmlMeta    : "color:#6b7280;font-size:13px;margin-top:6px",
+        exportHtmlTable   : "border-collapse:collapse;width:100%;margin-top:12px",
+        exportHtmlTh      : "background:#f7fafc;color:#334155;padding:10px;border:1px solid #eef2f7;text-align:left",
+        exportHtmlTd      : "padding:8px;border:1px solid #eef2f7",
+        exportHtmlTdNowrap: "padding:8px;border:1px solid #eef2f7;white-space:nowrap;",
+        exportHtmlAgo     : "color:#7b8794;font-size:11px",
+        exportHtmlLink    : "color:#0b6ef6;text-decoration:none;word-break:break-all"
     };
 
         const toggleBtn  = document.createElement('div');
@@ -962,32 +972,41 @@
                 const ts      = new Date(i.ts || Date.now());
                 const timestr = ts.toLocaleString();
                 const ago     = humanAgo(i.ts || Date.now());
-                const vid     = esc(i.vid || '');
+                const vid     = esc(i.vid   || '');
                 const title   = esc(i.title || '');
-                const url     = esc(i.url || '');
-                return `<tr>
-                    <td style="padding:8px;border:1px solid #eee;white-space:nowrap;">${timestr}<div style="color:#7b8794;font-size:11px">${ago} ago</div></td>
-                    <td style="padding:8px;border:1px solid #eee">${vid}</td>
-                    <td style="padding:8px;border:1px solid #eee"><a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#0b6ef6;text-decoration:none">${title || url}</a></td>
+                const url     = esc(i.url   || '');
+                return `
+                <tr>
+                    <td style="${styles.exportHtmlTdNowrap}">${timestr}<div style="${styles.exportHtmlAgo}">${ago} ago</div></td>
+                    <td style="${styles.exportHtmlTd}">${vid}</td>
+                    <td style="${styles.exportHtmlTd}"><a href="${url}" target="_blank" rel="noopener noreferrer" style="${styles.exportHtmlLink}">${title || url}</a></td>
                 </tr>`;
             }).join('');
 
-            const content = `<!doctype html><html><head><meta charset="utf-8"><title>HH Manual List</title><meta name="viewport" content="width=device-width,initial-scale=1">
-                <style>
-                    body{font-family:Arial,Helvetica,sans-serif;padding:18px;color:#111;background:#fff}
-                    h2{margin:0 0 8px;font-size:18px}
-                    table{border-collapse:collapse;width:100%;margin-top:12px}
-                    th{background:#f7fafc;color:#334155;padding:10px;border:1px solid #eef2f7;text-align:left}
-                    td{padding:8px;border:1px solid #eef2f7}
-                    a{word-break:break-all}
-                    .meta{color:#6b7280;font-size:13px;margin-top:6px}
-                </style>
-                </head><body>
-                <h2>Saved vacancies for manual responses</h2>
-                <div class="meta">Export date: ${new Date().toLocaleString()} — ${uniq.length} item(s)</div>
-                <table><thead><tr><th>saved</th><th>vid</th><th>link</th></tr></thead><tbody>${rows}</tbody></table>
-                </body></html>`;
-
+            const content = `<!doctype html>
+                             <html>
+                             <head>
+                                 <meta charset="utf-8">
+                                 <title>HH Manual List</title>
+                                 <meta name="viewport" content="width=device-width,initial-scale=1">
+                             </head>
+                             <body style="${styles.exportHtmlBody}">
+                                 <h2 style="${styles.exportHtmlH2}">Saved vacancies for manual responses</h2>
+                                 <div style="${styles.exportHtmlMeta}">Export date: ${new Date().toLocaleString()} — ${uniq.length} item(s)</div>
+                                 <table style="${styles.exportHtmlTable}">
+                                     <thead>
+                                         <tr>
+                                             <th style="${styles.exportHtmlTh}">saved</th>
+                                             <th style="${styles.exportHtmlTh}">vid</th>
+                                             <th style="${styles.exportHtmlTh}">link</th>
+                                         </tr>
+                                     </thead>
+                                     <tbody>
+                                         ${rows}
+                                     </tbody>
+                                 </table>
+                             </body>
+                             </html>`.trim();
             const blob    = new Blob([content], { type : 'text/html;charset=utf-8' });
             const urlBlob = URL.createObjectURL(blob);
             const a       = document.createElement('a'); a.href = urlBlob; a.download = 'hh_manual_list.html';
@@ -1013,28 +1032,28 @@
             }
             list.forEach(item => {
                 const row = document.createElement('div');
-                      row.style.cssText            = styles.manualRow;
-                const time                         = new Date(item.ts).toLocaleString();
-                const left                         = document.createElement('div');
-                      left.style.cssText           = styles.manualLeft;
-                      left.innerHTML               = `
-                                                     <div style="${styles.manualIdText}">
-                                                         ${item.vid} • ${time}
-                                                     </div>
-                                                     <div style="${styles.manualLinkBox}">
-                                                         <a href="${item.url}" target="_blank">Открыть страницу с вопросами</a>
-                                                     </div>
-                                                     `;
-                const actions                      = document.createElement('div');
-                      actions.style.cssText        = styles.manualActions;
-                const openBtn                      = document.createElement('button');
-                      openBtn.textContent          = 'Open';
-                      openBtn.style.cssText        = styles.manualBtn;
-                      openBtn.onclick              = () => window.open(item.url, '_blank');
-                const removeBtn                    = document.createElement('button');
-                      removeBtn.textContent        = 'Remove';
-                      removeBtn.style.cssText      = styles.manualBtn;
-                      removeBtn.onclick            = () => { StateManager.removeManualEntry(item.vid); renderManualList(); };
+                      row.style.cssText       = styles.manualRow;
+                const time                    = new Date(item.ts).toLocaleString();
+                const left                    = document.createElement('div');
+                      left.style.cssText      = styles.manualLeft;
+                      left.innerHTML          = `
+                                                <div style="${styles.manualIdText}">
+                                                    ${item.vid} • ${time}
+                                                </div>
+                                                <div style="${styles.manualLinkBox}">
+                                                    <a href="${item.url}" target="_blank">Открыть страницу с вопросами</a>
+                                                </div>
+                                                `;
+                const actions                 = document.createElement('div');
+                      actions.style.cssText   = styles.manualActions;
+                const openBtn                 = document.createElement('button');
+                      openBtn.textContent     = 'Open';
+                      openBtn.style.cssText   = styles.manualBtn;
+                      openBtn.onclick         = () => window.open(item.url, '_blank');
+                const removeBtn               = document.createElement('button');
+                      removeBtn.textContent   = 'Remove';
+                      removeBtn.style.cssText = styles.manualBtn;
+                      removeBtn.onclick       = () => { StateManager.removeManualEntry(item.vid); renderManualList(); };
 
                 actions.appendChild(openBtn);
                 actions.appendChild(removeBtn);
