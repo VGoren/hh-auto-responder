@@ -1,17 +1,5 @@
-// ==UserScript==
-// @name         HH.ru Auto Responder  v2.1.0
-// @namespace    http://tampermonkey.net/
-// @version      v2.1.0
-// @description  Авто-отклики на hh.ru
-// @author       Timur Geruzov (modified)
-// @match        *://*.hh.ru/search/vacancy*
-// @match        *://*.hh.ru/vacancy/*
-// @match        *://*.hh.ru/applicant/vacancy_response*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=hh.ru
-// @grant        none
-// @run-at       document-idle
-// ==/UserScript==
-
+//Extension: Scripty
+//Pattern:   https://hh.ru/*,https://rabota.by/*
 (function () {
     'use strict';
 
@@ -49,15 +37,15 @@
                            },
     DEFAULTS_FIXED       = {                                                                                                    // Параметры, которые каждый раз загружаются заново
                                templates        : [
-                                                     { value: 'Добрый день{lastRecruiterName}! Ознакомился с вакансией{lastTitle}. Мой опыт релевантен вашим задачам, буду рад обсудить подробности на интервью.' },
-                                                     { value: 'Здравствуйте! Заинтересовала вакансия {lastTitle}. Имею коммерческий опыт работы с вашим стеком технологий. Подробности в резюме.' },
-                                                     { value: 'Добрый день! Прошу рассмотреть мою кандидатуру на позицию{lastTitle}. Буду рад обратной связи!' },
-                                                     { value: 'Добрый день! Имею коммерческий опыт вфывыфвф' }
+                                                      { value: 'Добрый день{lastRecruiterName}! Заинтересовала вакансия {lastTitle}. Мой опыт релевантен вашим задачам, буду рад обсудить подробности на интервью.\n\n📱 @v_gorenkov\n✉️ holymind73@gmail.com' }
+                                                     ,{ value: 'Добрый день{lastRecruiterName}! Заинтересовала вакансия {lastTitle}. Мой опыт релевантен вашим задачам, буду рад обсудить подробности на интервью.\n\n📞 +375(29)7169637\n📱 @v_gorenkov\n✉️ holymind73@gmail.com' }
+                                                     ,{ value: 'Здравствуйте! Заинтересовала вакансия {lastTitle}. Имею коммерческий опыт работы с вашим стеком технологий. Подробности в резюме.' }
+                                                     ,{ value: 'Добрый день! Прошу рассмотреть мою кандидатуру на позицию{lastTitle}. Буду рад обратной связи!' }
                                                   ],
                                resumes          : [
-                                                     { name: 'Не выбирать (текущее)', value: '' },
-                                                     { name: 'SQL-Разработчик',       value: '510669b0ff0ff5b8810039ed1f5945306a6863' },
-                                                     { name: 'Разработчик SQL',       value: '8c5823a8ff0997221f0039ed1f7250444b726c' }
+                                                      { name: 'Не выбирать (текущее)', value: '' }
+                                                     ,{ name: 'SQL-Разработчик',       value: '510669b0ff0ff5b8810039ed1f5945306a6863' }
+                                                     ,{ name: 'Разработчик SQL',       value: '8c5823a8ff0997221f0039ed1f7250444b726c' }
                                                   ]
                            },
     DEFAULTS             = {                                                                                                    // Параметры, которые загружатся лишь в первый раз, а дальше изменяются
