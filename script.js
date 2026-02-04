@@ -865,7 +865,7 @@
         config.templates.forEach((template, i) => {
             const opt             = document.createElement('option');
                   opt.value       = i;
-                  opt.textContent = template.value.length > 80 ? template.value.slice(0, 80) + '...' : template.value;
+                  opt.textContent = template.value;
             el('ar-template-select').appendChild(opt);
         });
         config.resumes.forEach((resume, i) => {
